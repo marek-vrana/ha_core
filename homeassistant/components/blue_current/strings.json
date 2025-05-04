@@ -30,18 +30,18 @@
           "available": "Available",
           "charging": "[%key:common::state::charging%]",
           "unavailable": "Unavailable",
-          "error": "[%key:common::state::error%]",
+          "error": "Error",
           "offline": "Offline"
         }
       },
       "vehicle_status": {
         "name": "Vehicle status",
         "state": {
-          "standby": "[%key:common::state::standby%]",
+          "standby": "Standby",
           "vehicle_detected": "Detected",
           "ready": "Ready",
           "no_power": "No power",
-          "vehicle_error": "[%key:common::state::error%]"
+          "vehicle_error": "Error"
         }
       },
       "actual_v1": {

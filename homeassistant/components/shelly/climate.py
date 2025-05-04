@@ -7,7 +7,12 @@ from dataclasses import asdict, dataclass
 from typing import Any, cast
 
 from aioshelly.block_device import Block
-from aioshelly.const import BLU_TRV_IDENTIFIER, BLU_TRV_MODEL_NAME, RPC_GENERATIONS
+from aioshelly.const import (
+    BLU_TRV_IDENTIFIER,
+    BLU_TRV_MODEL_NAME,
+    BLU_TRV_TIMEOUT,
+    RPC_GENERATIONS,
+)
 from aioshelly.exceptions import DeviceConnectionError, InvalidAuthError
 
 from homeassistant.components.climate import (
@@ -43,7 +48,7 @@ from .const import (
     SHTRV_01_TEMPERATURE_SETTINGS,
 )
 from .coordinator import ShellyBlockCoordinator, ShellyConfigEntry, ShellyRpcCoordinator
-from .entity import ShellyRpcEntity, rpc_call
+from .entity import ShellyRpcEntity
 from .utils import (
     async_remove_shelly_entity,
     get_device_entry_gen,
@@ -596,12 +601,17 @@ class RpcBluTrvClimate(ShellyRpcEntity, ClimateEntity):
 
         return HVACAction.HEATING
 
-    @rpc_call
     async def async_set_temperature(self, **kwargs: Any) -> None:
         """Set new target temperature."""
         if (target_temp := kwargs.get(ATTR_TEMPERATURE)) is None:
             return
 
-        await self.coordinator.device.blu_trv_set_target_temperature(
-            self._id, target_temp
+        await self.call_rpc(
+            "BluTRV.Call",
+            {
+                "id": self._id,
+                "method": "Trv.SetTarget",
+                "params": {"id": 0, "target_C": target_temp},
+            },
+            timeout=BLU_TRV_TIMEOUT,
         )

@@ -29,8 +29,6 @@ from .entity import (
 )
 from .enum_mapper import EsphomeEnumMapper
 
-PARALLEL_UPDATES = 0
-
 _ESPHOME_ACP_STATE_TO_HASS_STATE: EsphomeEnumMapper[
     ESPHomeAlarmControlPanelState, AlarmControlPanelState
 ] = EsphomeEnumMapper(
@@ -50,7 +48,7 @@ _ESPHOME_ACP_STATE_TO_HASS_STATE: EsphomeEnumMapper[
 
 
 class EspHomeACPFeatures(APIIntEnum):
-    """ESPHome AlarmControlPanel feature numbers."""
+    """ESPHome AlarmCintolPanel feature numbers."""
 
     ARM_HOME = 1
     ARM_AWAY = 2

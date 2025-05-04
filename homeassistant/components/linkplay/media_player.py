@@ -23,14 +23,19 @@ from homeassistant.components.media_player import (
     RepeatMode,
     async_process_play_media_url,
 )
+from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
-from homeassistant.helpers import config_validation as cv, entity_platform
+from homeassistant.helpers import (
+    config_validation as cv,
+    entity_platform,
+    entity_registry as er,
+)
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.util.dt import utcnow
 
-from . import SHARED_DATA, LinkPlayConfigEntry
-from .const import DOMAIN
+from . import LinkPlayConfigEntry, LinkPlayData
+from .const import CONTROLLER_KEY, DOMAIN
 from .entity import LinkPlayBaseEntity, exception_wrap
 
 _LOGGER = logging.getLogger(__name__)
@@ -158,13 +163,6 @@ class LinkPlayMediaPlayerEntity(LinkPlayBaseEntity, MediaPlayerEntity):
             mode.value for mode in bridge.player.available_equalizer_modes
         ]
 
-    async def async_added_to_hass(self) -> None:
-        """Handle common setup when added to hass."""
-        await super().async_added_to_hass()
-        self.hass.data[DOMAIN][SHARED_DATA].entity_to_bridge[self.entity_id] = (
-            self._bridge.device.uuid
-        )
-
     @exception_wrap
     async def async_update(self) -> None:
         """Update the state of the media player."""
@@ -278,63 +276,62 @@ class LinkPlayMediaPlayerEntity(LinkPlayBaseEntity, MediaPlayerEntity):
     async def async_join_players(self, group_members: list[str]) -> None:
         """Join `group_members` as a player group with the current player."""
 
-        controller: LinkPlayController = self.hass.data[DOMAIN][SHARED_DATA].controller
+        controller: LinkPlayController = self.hass.data[DOMAIN][CONTROLLER_KEY]
         multiroom = self._bridge.multiroom
         if multiroom is None:
             multiroom = LinkPlayMultiroom(self._bridge)
 
         for group_member in group_members:
-            bridge = await self._get_linkplay_bridge(group_member)
+            bridge = self._get_linkplay_bridge(group_member)
             if bridge:
                 await multiroom.add_follower(bridge)
 
         await controller.discover_multirooms()
 
-    async def _get_linkplay_bridge(self, entity_id: str) -> LinkPlayBridge:
+    def _get_linkplay_bridge(self, entity_id: str) -> LinkPlayBridge:
         """Get linkplay bridge from entity_id."""
 
-        shared_data = self.hass.data[DOMAIN][SHARED_DATA]
-        controller = shared_data.controller
-        bridge_uuid = shared_data.entity_to_bridge.get(entity_id, None)
-        bridge = await controller.find_bridge(bridge_uuid)
+        entity_registry = er.async_get(self.hass)
 
-        if bridge is None:
+        # Check for valid linkplay media_player entity
+        entity_entry = entity_registry.async_get(entity_id)
+
+        if (
+            entity_entry is None
+            or entity_entry.domain != Platform.MEDIA_PLAYER
+            or entity_entry.platform != DOMAIN
+            or entity_entry.config_entry_id is None
+        ):
             raise ServiceValidationError(
                 translation_domain=DOMAIN,
                 translation_key="invalid_grouping_entity",
                 translation_placeholders={"entity_id": entity_id},
             )
 
-        return bridge
+        config_entry = self.hass.config_entries.async_get_entry(
+            entity_entry.config_entry_id
+        )
+        assert config_entry
+
+        # Return bridge
+        data: LinkPlayData = config_entry.runtime_data
+        return data.bridge
 
     @property
     def group_members(self) -> list[str]:
         """List of players which are grouped together."""
         multiroom = self._bridge.multiroom
-        if multiroom is None:
-            return []
+        if multiroom is not None:
+            return [multiroom.leader.device.uuid] + [
+                follower.device.uuid for follower in multiroom.followers
+            ]
 
-        shared_data = self.hass.data[DOMAIN][SHARED_DATA]
-
-        return [
-            entity_id
-            for entity_id, bridge in shared_data.entity_to_bridge.items()
-            if bridge
-            in [multiroom.leader.device.uuid]
-            + [follower.device.uuid for follower in multiroom.followers]
-        ]
-
-    @property
-    def media_image_url(self) -> str | None:
-        """Image url of playing media."""
-        if self._bridge.player.status in [PlayingStatus.PLAYING, PlayingStatus.PAUSED]:
-            return str(self._bridge.player.album_art)
-        return None
+        return []
 
     @exception_wrap
     async def async_unjoin_player(self) -> None:
         """Remove this player from any group."""
-        controller: LinkPlayController = self.hass.data[DOMAIN][SHARED_DATA].controller
+        controller: LinkPlayController = self.hass.data[DOMAIN][CONTROLLER_KEY]
 
         multiroom = self._bridge.multiroom
         if multiroom is not None:

@@ -1,6 +1,6 @@
 {
   "config": {
-    "flow_title": "homee {name} ({host})",
+    "flow_title": "Homee {name} ({host})",
     "abort": {
       "already_configured": "[%key:common::config_flow::abort::already_configured_device%]"
     },
@@ -18,9 +18,9 @@
           "username": "[%key:common::config_flow::data::username%]"
         },
         "data_description": {
-          "host": "The IP address of your homee.",
-          "username": "The username for your homee.",
-          "password": "The password for your homee."
+          "host": "The IP address of your Homee.",
+          "username": "The username for your Homee.",
+          "password": "The password for your Homee."
         }
       }
     }
@@ -45,7 +45,7 @@
       "load_alarm": {
         "name": "Load",
         "state": {
-          "off": "[%key:common::state::normal%]",
+          "off": "Normal",
           "on": "Overload"
         }
       },
@@ -131,17 +131,6 @@
         "name": "Ventilate"
       }
     },
-    "climate": {
-      "homee": {
-        "state_attributes": {
-          "preset_mode": {
-            "state": {
-              "manual": "[%key:common::state::manual%]"
-            }
-          }
-        }
-      }
-    },
     "light": {
       "light_instance": {
         "name": "Light {instance}"
@@ -189,9 +178,6 @@
       },
       "wake_up_interval": {
         "name": "Wake-up interval"
-      },
-      "wind_monitoring_state": {
-        "name": "Threshold for wind trigger"
       }
     },
     "select": {
@@ -311,8 +297,8 @@
           "open": "[%key:common::state::open%]",
           "closed": "[%key:common::state::closed%]",
           "partial": "Partially open",
-          "opening": "[%key:common::state::opening%]",
-          "closing": "[%key:common::state::closing%]"
+          "opening": "Opening",
+          "closing": "Closing"
         }
       },
       "uv": {
@@ -355,7 +341,7 @@
   },
   "exceptions": {
     "connection_closed": {
-      "message": "Could not connect to homee while setting attribute."
+      "message": "Could not connect to Homee while setting attribute."
     }
   }
 }

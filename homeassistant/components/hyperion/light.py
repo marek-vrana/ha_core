@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable, Mapping, Sequence
 import functools
 import logging
+from types import MappingProxyType
 from typing import Any
 
 from hyperion import client, const
@@ -17,6 +18,7 @@ from homeassistant.components.light import (
     LightEntity,
     LightEntityFeature,
 )
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.dispatcher import (
@@ -27,13 +29,13 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.util import color as color_util
 
 from . import (
-    HyperionConfigEntry,
     get_hyperion_device_id,
     get_hyperion_unique_id,
     listen_for_instance_updates,
 )
 from .const import (
     CONF_EFFECT_HIDE_LIST,
+    CONF_INSTANCE_CLIENTS,
     CONF_PRIORITY,
     DEFAULT_ORIGIN,
     DEFAULT_PRIORITY,
@@ -73,26 +75,28 @@ ICON_EFFECT = "mdi:lava-lamp"
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: HyperionConfigEntry,
+    config_entry: ConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Set up a Hyperion platform from config entry."""
 
-    server_id = entry.unique_id
+    entry_data = hass.data[DOMAIN][config_entry.entry_id]
+    server_id = config_entry.unique_id
 
     @callback
     def instance_add(instance_num: int, instance_name: str) -> None:
         """Add entities for a new Hyperion instance."""
         assert server_id
+        args = (
+            server_id,
+            instance_num,
+            instance_name,
+            config_entry.options,
+            entry_data[CONF_INSTANCE_CLIENTS][instance_num],
+        )
         async_add_entities(
             [
-                HyperionLight(
-                    server_id,
-                    instance_num,
-                    instance_name,
-                    entry.options,
-                    entry.runtime_data.instance_clients[instance_num],
-                ),
+                HyperionLight(*args),
             ]
         )
 
@@ -107,7 +111,7 @@ async def async_setup_entry(
             ),
         )
 
-    listen_for_instance_updates(hass, entry, instance_add, instance_remove)
+    listen_for_instance_updates(hass, config_entry, instance_add, instance_remove)
 
 
 class HyperionLight(LightEntity):
@@ -125,7 +129,7 @@ class HyperionLight(LightEntity):
         server_id: str,
         instance_num: int,
         instance_name: str,
-        options: Mapping[str, Any],
+        options: MappingProxyType[str, Any],
         hyperion_client: client.HyperionClient,
     ) -> None:
         """Initialize the light."""

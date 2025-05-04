@@ -48,7 +48,6 @@ from tests.common import (
     MockEntity,
     MockEntityPlatform,
     MockPlatform,
-    RegistryEntryWithDefaults,
     async_fire_time_changed,
     mock_platform,
     mock_registry,
@@ -753,7 +752,7 @@ async def test_overriding_name_from_registry(hass: HomeAssistant) -> None:
     mock_registry(
         hass,
         {
-            "test_domain.world": RegistryEntryWithDefaults(
+            "test_domain.world": er.RegistryEntry(
                 entity_id="test_domain.world",
                 unique_id="1234",
                 # Using component.async_add_entities is equal to platform "domain"
@@ -786,7 +785,7 @@ async def test_registry_respect_entity_disabled(hass: HomeAssistant) -> None:
     mock_registry(
         hass,
         {
-            "test_domain.world": RegistryEntryWithDefaults(
+            "test_domain.world": er.RegistryEntry(
                 entity_id="test_domain.world",
                 unique_id="1234",
                 # Using component.async_add_entities is equal to platform "domain"
@@ -833,7 +832,7 @@ async def test_entity_registry_updates_name(hass: HomeAssistant) -> None:
     registry = mock_registry(
         hass,
         {
-            "test_domain.world": RegistryEntryWithDefaults(
+            "test_domain.world": er.RegistryEntry(
                 entity_id="test_domain.world",
                 unique_id="1234",
                 # Using component.async_add_entities is equal to platform "domain"
@@ -1066,7 +1065,7 @@ async def test_entity_registry_updates_entity_id(hass: HomeAssistant) -> None:
     registry = mock_registry(
         hass,
         {
-            "test_domain.world": RegistryEntryWithDefaults(
+            "test_domain.world": er.RegistryEntry(
                 entity_id="test_domain.world",
                 unique_id="1234",
                 # Using component.async_add_entities is equal to platform "domain"
@@ -1098,14 +1097,14 @@ async def test_entity_registry_updates_invalid_entity_id(hass: HomeAssistant) ->
     registry = mock_registry(
         hass,
         {
-            "test_domain.world": RegistryEntryWithDefaults(
+            "test_domain.world": er.RegistryEntry(
                 entity_id="test_domain.world",
                 unique_id="1234",
                 # Using component.async_add_entities is equal to platform "domain"
                 platform="test_platform",
                 name="Some name",
             ),
-            "test_domain.existing": RegistryEntryWithDefaults(
+            "test_domain.existing": er.RegistryEntry(
                 entity_id="test_domain.existing",
                 unique_id="5678",
                 platform="test_platform",
@@ -1530,19 +1529,14 @@ async def test_entity_info_added_to_entity_registry(
 
     entry_default = entity_registry.async_get_or_create(DOMAIN, DOMAIN, "default")
     assert entry_default == er.RegistryEntry(
-        entity_id="test_domain.best_name",
-        unique_id="default",
-        platform="test_domain",
+        "test_domain.best_name",
+        "default",
+        "test_domain",
         capabilities={"max": 100},
-        config_entry_id=None,
-        config_subentry_id=None,
         created_at=dt_util.utcnow(),
         device_class=None,
-        device_id=None,
-        disabled_by=None,
         entity_category=EntityCategory.CONFIG,
         has_entity_name=True,
-        hidden_by=None,
         icon=None,
         id=ANY,
         modified_at=dt_util.utcnow(),
@@ -1550,7 +1544,6 @@ async def test_entity_info_added_to_entity_registry(
         original_device_class="mock-device-class",
         original_icon="nice:icon",
         original_name="best name",
-        options=None,
         supported_features=5,
         translation_key="my_translation_key",
         unit_of_measurement=PERCENTAGE,

@@ -18,7 +18,7 @@ import pathlib
 import sys
 import time
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, Literal, Protocol, TypedDict, cast, final
+from typing import TYPE_CHECKING, Any, Literal, Protocol, TypedDict, cast
 
 from awesomeversion import (
     AwesomeVersion,
@@ -646,7 +646,6 @@ def async_register_preload_platform(hass: HomeAssistant, platform_name: str) -> 
         preload_platforms.append(platform_name)
 
 
-@final  # Final to allow direct checking of the type instead of using isinstance
 class Integration:
     """An integration in Home Assistant."""
 
@@ -1447,66 +1446,19 @@ async def resolve_integrations_dependencies(
 
     Detects circular dependencies and missing integrations.
     """
-    return await _resolve_integrations_dependencies(
-        hass,
-        "resolve dependencies",
-        integrations,
-        cache=_ResolveDependenciesCache(),
-        ignore_exceptions=False,
-    )
-
-
-async def resolve_integrations_after_dependencies(
-    hass: HomeAssistant,
-    integrations: Iterable[Integration],
-    possible_after_dependencies: set[str] | None = None,
-    *,
-    ignore_exceptions: bool = False,
-) -> dict[str, set[str]]:
-    """Resolve all dependencies, including after_dependencies, for integrations.
-
-    Detects circular dependencies and missing integrations.
-    """
-    return await _resolve_integrations_dependencies(
-        hass,
-        "resolve (after) dependencies",
-        integrations,
-        cache={},
-        possible_after_dependencies=possible_after_dependencies,
-        ignore_exceptions=ignore_exceptions,
-    )
-
-
-async def _resolve_integrations_dependencies(
-    hass: HomeAssistant,
-    name: str,
-    integrations: Iterable[Integration],
-    *,
-    cache: _ResolveDependenciesCacheProtocol,
-    possible_after_dependencies: set[str] | None | UndefinedType = UNDEFINED,
-    ignore_exceptions: bool,
-) -> dict[str, set[str]]:
-    """Resolve all dependencies, possibly including after_dependencies, for integrations.
-
-    Detects circular dependencies and missing integrations.
-    """
+    resolved = _ResolveDependenciesCache()
 
     async def _resolve_deps_catch_exceptions(itg: Integration) -> set[str] | None:
         try:
-            return await _resolve_integration_dependencies(
-                itg,
-                cache=cache,
-                possible_after_dependencies=possible_after_dependencies,
-                ignore_exceptions=ignore_exceptions,
-            )
+            return await _do_resolve_dependencies(itg, cache=resolved)
         except Exception as exc:  # noqa: BLE001
-            _LOGGER.error("Unable to %s for %s: %s", name, itg.domain, exc)
+            _LOGGER.error("Unable to resolve dependencies for %s: %s", itg.domain, exc)
             return None
 
     resolve_dependencies_tasks = {
         itg.domain: create_eager_task(
             _resolve_deps_catch_exceptions(itg),
-            name=f"{name} {itg.domain}",
+            name=f"resolve dependencies {itg.domain}",
             loop=hass.loop,
         )
         for itg in integrations
@@ -1521,7 +1473,52 @@ async def _resolve_integrations_dependencies(
     }
 
 
-async def _resolve_integration_dependencies(
+async def resolve_integrations_after_dependencies(
+    hass: HomeAssistant,
+    integrations: Iterable[Integration],
+    possible_after_dependencies: set[str] | None = None,
+    *,
+    ignore_exceptions: bool = False,
+) -> dict[str, set[str]]:
+    """Resolve all dependencies, including after_dependencies, for integrations.
+
+    Detects circular dependencies and missing integrations.
+    """
+    resolved: dict[Integration, set[str] | Exception] = {}
+
+    async def _resolve_deps_catch_exceptions(itg: Integration) -> set[str] | None:
+        try:
+            return await _do_resolve_dependencies(
+                itg,
+                cache=resolved,
+                possible_after_dependencies=possible_after_dependencies,
+                ignore_exceptions=ignore_exceptions,
+            )
+        except Exception as exc:  # noqa: BLE001
+            _LOGGER.error(
+                "Unable to resolve (after) dependencies for %s: %s", itg.domain, exc
+            )
+            return None
+
+    resolve_dependencies_tasks = {
+        itg.domain: create_eager_task(
+            _resolve_deps_catch_exceptions(itg),
+            name=f"resolve after dependencies {itg.domain}",
+            loop=hass.loop,
+        )
+        for itg in integrations
+    }
+
+    result = await asyncio.gather(*resolve_dependencies_tasks.values())
+
+    return {
+        domain: deps
+        for domain, deps in zip(resolve_dependencies_tasks, result, strict=True)
+        if deps is not None
+    }
+
+
+async def _do_resolve_dependencies(
     itg: Integration,
     *,
     cache: _ResolveDependenciesCacheProtocol,
@@ -1544,7 +1541,7 @@ async def _resolve_integration_dependencies(
     resolved = cache
     resolving: set[str] = set()
 
-    async def resolve_dependencies_impl(itg: Integration) -> set[str]:
+    async def do_resolve_dependencies_impl(itg: Integration) -> set[str]:
         domain = itg.domain
 
         # If it's already resolved, no point doing it again.
@@ -1586,7 +1583,7 @@ async def _resolve_integration_dependencies(
             all_dependencies.add(dep_domain)
 
             try:
-                dep_dependencies = await resolve_dependencies_impl(dep_integration)
+                dep_dependencies = await do_resolve_dependencies_impl(dep_integration)
             except CircularDependency as exc:
                 exc.extend_cycle(domain)
                 resolved[itg] = exc
@@ -1602,7 +1599,7 @@ async def _resolve_integration_dependencies(
         resolved[itg] = all_dependencies
         return all_dependencies
 
-    return await resolve_dependencies_impl(itg)
+    return await do_resolve_dependencies_impl(itg)
 
 
 class LoaderError(Exception):
@@ -1708,6 +1705,76 @@ class ModuleWrapper:
 
         setattr(self, attr, value)
         return value
+
+
+class Components:
+    """Helper to load components."""
+
+    def __init__(self, hass: HomeAssistant) -> None:
+        """Initialize the Components class."""
+        self._hass = hass
+
+    def __getattr__(self, comp_name: str) -> ModuleWrapper:
+        """Fetch a component."""
+        # Test integration cache
+        integration = self._hass.data[DATA_INTEGRATIONS].get(comp_name)
+
+        if isinstance(integration, Integration):
+            component: ComponentProtocol | None = integration.get_component()
+        else:
+            # Fallback to importing old-school
+            component = _load_file(self._hass, comp_name, _lookup_path(self._hass))
+
+        if component is None:
+            raise ImportError(f"Unable to load {comp_name}")
+
+        # Local import to avoid circular dependencies
+        # pylint: disable-next=import-outside-toplevel
+        from .helpers.frame import ReportBehavior, report_usage
+
+        report_usage(
+            f"accesses hass.components.{comp_name}, which"
+            f" should be updated to import functions used from {comp_name} directly",
+            core_behavior=ReportBehavior.IGNORE,
+            core_integration_behavior=ReportBehavior.IGNORE,
+            custom_integration_behavior=ReportBehavior.LOG,
+            breaks_in_ha_version="2025.3",
+        )
+
+        wrapped = ModuleWrapper(self._hass, component)
+        setattr(self, comp_name, wrapped)
+        return wrapped
+
+
+class Helpers:
+    """Helper to load helpers."""
+
+    def __init__(self, hass: HomeAssistant) -> None:
+        """Initialize the Helpers class."""
+        self._hass = hass
+
+    def __getattr__(self, helper_name: str) -> ModuleWrapper:
+        """Fetch a helper."""
+        helper = importlib.import_module(f"homeassistant.helpers.{helper_name}")
+
+        # Local import to avoid circular dependencies
+        # pylint: disable-next=import-outside-toplevel
+        from .helpers.frame import ReportBehavior, report_usage
+
+        report_usage(
+            (
+                f"accesses hass.helpers.{helper_name}, which"
+                f" should be updated to import functions used from {helper_name} directly"
+            ),
+            core_behavior=ReportBehavior.IGNORE,
+            core_integration_behavior=ReportBehavior.IGNORE,
+            custom_integration_behavior=ReportBehavior.LOG,
+            breaks_in_ha_version="2025.5",
+        )
+
+        wrapped = ModuleWrapper(self._hass, helper)
+        setattr(self, helper_name, wrapped)
+        return wrapped
 
 
 def bind_hass[_CallableT: Callable[..., Any]](func: _CallableT) -> _CallableT:

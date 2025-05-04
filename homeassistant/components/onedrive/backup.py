@@ -174,15 +174,11 @@ class OneDriveBackupAgent(BackupAgent):
         description = dumps(backup.as_dict())
         _LOGGER.debug("Creating metadata: %s", description)
         metadata_filename = filename.rsplit(".", 1)[0] + ".metadata.json"
-        try:
-            metadata_file = await self._client.upload_file(
-                self._folder_id,
-                metadata_filename,
-                description,
-            )
-        except OneDriveException:
-            await self._client.delete_drive_item(backup_file.id)
-            raise
+        metadata_file = await self._client.upload_file(
+            self._folder_id,
+            metadata_filename,
+            description,
+        )
 
         # add metadata to the metadata file
         metadata_description = {
@@ -190,15 +186,10 @@ class OneDriveBackupAgent(BackupAgent):
             "backup_id": backup.backup_id,
             "backup_file_id": backup_file.id,
         }
-        try:
-            await self._client.update_drive_item(
-                path_or_id=metadata_file.id,
-                data=ItemUpdate(description=dumps(metadata_description)),
-            )
-        except OneDriveException:
-            await self._client.delete_drive_item(backup_file.id)
-            await self._client.delete_drive_item(metadata_file.id)
-            raise
+        await self._client.update_drive_item(
+            path_or_id=metadata_file.id,
+            data=ItemUpdate(description=dumps(metadata_description)),
+        )
         self._cache_expiration = time()
 
     @handle_backup_errors
@@ -244,12 +235,8 @@ class OneDriveBackupAgent(BackupAgent):
 
         items = await self._client.list_drive_items(self._folder_id)
 
-        async def download_backup_metadata(item_id: str) -> AgentBackup | None:
-            try:
-                metadata_stream = await self._client.download_drive_item(item_id)
-            except OneDriveException as err:
-                _LOGGER.warning("Error downloading metadata for %s: %s", item_id, err)
-                return None
+        async def download_backup_metadata(item_id: str) -> AgentBackup:
+            metadata_stream = await self._client.download_drive_item(item_id)
             metadata_json = loads(await metadata_stream.read())
             return AgentBackup.from_dict(metadata_json)
 
@@ -259,8 +246,6 @@ class OneDriveBackupAgent(BackupAgent):
                 metadata_description_json := unescape(item.description)
             ):
                 backup = await download_backup_metadata(item.id)
-                if backup is None:
-                    continue
                 metadata_description = loads(metadata_description_json)
                 backups[backup.backup_id] = OneDriveBackup(
                     backup=backup,

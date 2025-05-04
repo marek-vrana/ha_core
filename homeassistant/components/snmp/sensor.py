@@ -45,7 +45,6 @@ from homeassistant.helpers.trigger_template_entity import (
     CONF_PICTURE,
     TEMPLATE_SENSOR_BASE_SCHEMA,
     ManualTriggerSensorEntity,
-    ValueTemplate,
 )
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 
@@ -95,9 +94,7 @@ PLATFORM_SCHEMA = SENSOR_PLATFORM_SCHEMA.extend(
         vol.Optional(CONF_DEFAULT_VALUE): cv.string,
         vol.Optional(CONF_HOST, default=DEFAULT_HOST): cv.string,
         vol.Optional(CONF_PORT, default=DEFAULT_PORT): cv.port,
-        vol.Optional(CONF_VALUE_TEMPLATE): vol.All(
-            cv.template, ValueTemplate.from_template
-        ),
+        vol.Optional(CONF_VALUE_TEMPLATE): cv.template,
         vol.Optional(CONF_VERSION, default=DEFAULT_VERSION): vol.In(SNMP_VERSIONS),
         vol.Optional(CONF_USERNAME): cv.string,
         vol.Optional(CONF_AUTH_KEY): cv.string,
@@ -176,7 +173,7 @@ async def async_setup_platform(
             continue
         trigger_entity_config[key] = config[key]
 
-    value_template: ValueTemplate | None = config.get(CONF_VALUE_TEMPLATE)
+    value_template: Template | None = config.get(CONF_VALUE_TEMPLATE)
 
     data = SnmpData(request_args, baseoid, accept_errors, default_value)
     async_add_entities([SnmpSensor(hass, data, trigger_entity_config, value_template)])
@@ -192,7 +189,7 @@ class SnmpSensor(ManualTriggerSensorEntity):
         hass: HomeAssistant,
         data: SnmpData,
         config: ConfigType,
-        value_template: ValueTemplate | None,
+        value_template: Template | None,
     ) -> None:
         """Initialize the sensor."""
         super().__init__(hass, config)
@@ -209,16 +206,17 @@ class SnmpSensor(ManualTriggerSensorEntity):
         """Get the latest data and updates the states."""
         await self.data.async_update()
 
-        variables = self._template_variables_with_value(self.data.value)
+        raw_value = self.data.value
+
         if (value := self.data.value) is None:
             value = STATE_UNKNOWN
         elif self._value_template is not None:
-            value = self._value_template.async_render_as_value_template(
-                self.entity_id, variables, STATE_UNKNOWN
+            value = self._value_template.async_render_with_possible_json_value(
+                value, STATE_UNKNOWN
             )
 
         self._attr_native_value = value
-        self._process_manual_data(variables)
+        self._process_manual_data(raw_value)
 
 
 class SnmpData:

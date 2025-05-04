@@ -65,8 +65,6 @@ from .entity import (
 )
 from .enum_mapper import EsphomeEnumMapper
 
-PARALLEL_UPDATES = 0
-
 FAN_QUIET = "quiet"
 
 
@@ -180,13 +178,13 @@ class EsphomeClimateEntity(EsphomeEntity[ClimateInfo, ClimateState], ClimateEnti
 
     def _get_precision(self) -> float:
         """Return the precision of the climate device."""
-        precisions = [PRECISION_WHOLE, PRECISION_HALVES, PRECISION_TENTHS]
+        precicions = [PRECISION_WHOLE, PRECISION_HALVES, PRECISION_TENTHS]
         static_info = self._static_info
         if static_info.visual_current_temperature_step != 0:
             step = static_info.visual_current_temperature_step
         else:
             step = static_info.visual_target_temperature_step
-        for prec in precisions:
+        for prec in precicions:
             if step >= prec:
                 return prec
         # Fall back to highest precision, tenths

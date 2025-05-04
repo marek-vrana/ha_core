@@ -41,9 +41,10 @@ from tests.test_util.aiohttp import AiohttpClientMocker
 
 async def test_entry_setup(
     hass: HomeAssistant,
-    client: MagicMock,
     config_entry: MockConfigEntry,
     integration_setup: Callable[[MagicMock], Awaitable[bool]],
+    setup_credentials: None,
+    client: MagicMock,
 ) -> None:
     """Test setup and unload."""
     assert config_entry.state == ConfigEntryState.NOT_LOADED
@@ -56,14 +57,27 @@ async def test_entry_setup(
     assert config_entry.state == ConfigEntryState.NOT_LOADED
 
 
+async def test_exception_handling(
+    integration_setup: Callable[[MagicMock], Awaitable[bool]],
+    config_entry: MockConfigEntry,
+    setup_credentials: None,
+    client_with_exception: MagicMock,
+) -> None:
+    """Test exception handling."""
+    assert config_entry.state == ConfigEntryState.NOT_LOADED
+    assert await integration_setup(client_with_exception)
+    assert config_entry.state == ConfigEntryState.LOADED
+
+
 @pytest.mark.parametrize("token_expiration_time", [12345])
 async def test_token_refresh_success(
     hass: HomeAssistant,
-    aioclient_mock: AiohttpClientMocker,
-    client: MagicMock,
+    platforms: list[Platform],
     integration_setup: Callable[[MagicMock], Awaitable[bool]],
     config_entry: MockConfigEntry,
-    platforms: list[Platform],
+    aioclient_mock: AiohttpClientMocker,
+    setup_credentials: None,
+    client: MagicMock,
 ) -> None:
     """Test where token is expired and the refresh attempt succeeds."""
 
@@ -138,13 +152,15 @@ async def test_token_refresh_success(
     ],
 )
 async def test_token_refresh_error(
-    hass: HomeAssistant,
-    aioclient_mock: AiohttpClientMocker,
-    client: MagicMock,
-    config_entry: MockConfigEntry,
-    integration_setup: Callable[[MagicMock], Awaitable[bool]],
     aioclient_mock_args: dict[str, Any],
     expected_config_entry_state: ConfigEntryState,
+    hass: HomeAssistant,
+    platforms: list[Platform],
+    integration_setup: Callable[[MagicMock], Awaitable[bool]],
+    config_entry: MockConfigEntry,
+    aioclient_mock: AiohttpClientMocker,
+    setup_credentials: None,
+    client: MagicMock,
 ) -> None:
     """Test where token is expired and the refresh attempt fails."""
 
@@ -173,11 +189,12 @@ async def test_token_refresh_error(
     ],
 )
 async def test_client_error(
-    client_with_exception: MagicMock,
-    config_entry: MockConfigEntry,
-    integration_setup: Callable[[MagicMock], Awaitable[bool]],
     exception: HomeConnectError,
     expected_state: ConfigEntryState,
+    config_entry: MockConfigEntry,
+    integration_setup: Callable[[MagicMock], Awaitable[bool]],
+    setup_credentials: None,
+    client_with_exception: MagicMock,
 ) -> None:
     """Test client errors during setup integration."""
     client_with_exception.get_home_appliances.return_value = None
@@ -199,10 +216,12 @@ async def test_client_error(
     ],
 )
 async def test_client_rate_limit_error(
-    client: MagicMock,
+    raising_exception_method: str,
+    hass: HomeAssistant,
     config_entry: MockConfigEntry,
     integration_setup: Callable[[MagicMock], Awaitable[bool]],
-    raising_exception_method: str,
+    setup_credentials: None,
+    client: MagicMock,
 ) -> None:
     """Test client errors during setup integration."""
     retry_after = 42
@@ -232,9 +251,10 @@ async def test_client_rate_limit_error(
 async def test_required_program_or_at_least_an_option(
     hass: HomeAssistant,
     device_registry: dr.DeviceRegistry,
-    client: MagicMock,
     config_entry: MockConfigEntry,
     integration_setup: Callable[[MagicMock], Awaitable[bool]],
+    setup_credentials: None,
+    client: MagicMock,
     appliance: HomeAppliance,
 ) -> None:
     "Test that the set_program_and_options does raise an exception if no program nor options are set."
@@ -268,8 +288,8 @@ async def test_entity_migration(
     device_registry: dr.DeviceRegistry,
     entity_registry: er.EntityRegistry,
     config_entry_v1_1: MockConfigEntry,
-    platforms: list[Platform],
     appliance: HomeAppliance,
+    platforms: list[Platform],
 ) -> None:
     """Test entity migration."""
 
@@ -338,20 +358,3 @@ async def test_bsh_key_transformations() -> None:
     program = "Dishcare.Dishwasher.Program.Eco50"
     translation_key = bsh_key_to_translation_key(program)
     assert RE_TRANSLATION_KEY.match(translation_key)
-
-
-async def test_config_entry_unique_id_migration(
-    hass: HomeAssistant,
-    config_entry_v1_2: MockConfigEntry,
-) -> None:
-    """Test that old config entries use the unique id obtained from the JWT subject."""
-    config_entry_v1_2.add_to_hass(hass)
-
-    assert config_entry_v1_2.unique_id != "1234567890"
-    assert config_entry_v1_2.minor_version == 2
-
-    await hass.config_entries.async_setup(config_entry_v1_2.entry_id)
-    await hass.async_block_till_done()
-
-    assert config_entry_v1_2.unique_id == "1234567890"
-    assert config_entry_v1_2.minor_version == 3

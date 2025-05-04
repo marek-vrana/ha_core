@@ -24,10 +24,8 @@ from .const import (
     SERVICE_SET_LEVEL,
 )
 from .helpers import (
-    DATA_LOGGER,
     LoggerDomainConfig,
     LoggerSettings,
-    _clear_logger_overwrites,  # noqa: F401
     set_default_log_level,
     set_log_levels,
 )
@@ -56,7 +54,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
     settings = LoggerSettings(hass, config)
 
-    domain_config = hass.data[DATA_LOGGER] = LoggerDomainConfig({}, settings)
+    domain_config = hass.data[DOMAIN] = LoggerDomainConfig({}, settings)
     logging.setLoggerClass(_get_logger_class(domain_config.overrides))
 
     websocket_api.async_load_websocket_api(hass)

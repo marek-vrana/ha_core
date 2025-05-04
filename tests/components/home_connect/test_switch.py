@@ -69,15 +69,29 @@ def platforms() -> list[str]:
     return [Platform.SWITCH]
 
 
-@pytest.mark.parametrize("appliance", ["Washer"], indirect=True)
-async def test_paired_depaired_devices_flow(
+async def test_switches(
     hass: HomeAssistant,
-    device_registry: dr.DeviceRegistry,
-    entity_registry: er.EntityRegistry,
-    client: MagicMock,
     config_entry: MockConfigEntry,
     integration_setup: Callable[[MagicMock], Awaitable[bool]],
+    setup_credentials: None,
+    client: MagicMock,
+) -> None:
+    """Test switch entities."""
+    assert config_entry.state == ConfigEntryState.NOT_LOADED
+    assert await integration_setup(client)
+    assert config_entry.state == ConfigEntryState.LOADED
+
+
+@pytest.mark.parametrize("appliance", ["Washer"], indirect=True)
+async def test_paired_depaired_devices_flow(
     appliance: HomeAppliance,
+    hass: HomeAssistant,
+    config_entry: MockConfigEntry,
+    integration_setup: Callable[[MagicMock], Awaitable[bool]],
+    setup_credentials: None,
+    client: MagicMock,
+    device_registry: dr.DeviceRegistry,
+    entity_registry: er.EntityRegistry,
 ) -> None:
     """Test that removed devices are correctly removed from and added to hass on API events."""
     client.get_available_program = AsyncMock(
@@ -148,14 +162,15 @@ async def test_paired_depaired_devices_flow(
     indirect=["appliance"],
 )
 async def test_connected_devices(
-    hass: HomeAssistant,
-    device_registry: dr.DeviceRegistry,
-    entity_registry: er.EntityRegistry,
-    client: MagicMock,
-    config_entry: MockConfigEntry,
-    integration_setup: Callable[[MagicMock], Awaitable[bool]],
     appliance: HomeAppliance,
     keys_to_check: tuple,
+    hass: HomeAssistant,
+    config_entry: MockConfigEntry,
+    integration_setup: Callable[[MagicMock], Awaitable[bool]],
+    setup_credentials: None,
+    client: MagicMock,
+    device_registry: dr.DeviceRegistry,
+    entity_registry: er.EntityRegistry,
 ) -> None:
     """Test that devices reconnected.
 
@@ -219,9 +234,10 @@ async def test_connected_devices(
 @pytest.mark.parametrize("appliance", ["Dishwasher"], indirect=True)
 async def test_switch_entity_availability(
     hass: HomeAssistant,
-    client: MagicMock,
     config_entry: MockConfigEntry,
     integration_setup: Callable[[MagicMock], Awaitable[bool]],
+    setup_credentials: None,
+    client: MagicMock,
     appliance: HomeAppliance,
 ) -> None:
     """Test if switch entities availability are based on the appliance connection state."""
@@ -300,16 +316,17 @@ async def test_switch_entity_availability(
     indirect=["appliance"],
 )
 async def test_switch_functionality(
-    hass: HomeAssistant,
-    client: MagicMock,
-    config_entry: MockConfigEntry,
-    integration_setup: Callable[[MagicMock], Awaitable[bool]],
     entity_id: str,
-    service: str,
     settings_key_arg: SettingKey,
     setting_value_arg: Any,
+    service: str,
     state: str,
+    hass: HomeAssistant,
+    config_entry: MockConfigEntry,
+    integration_setup: Callable[[MagicMock], Awaitable[bool]],
+    setup_credentials: None,
     appliance: HomeAppliance,
+    client: MagicMock,
 ) -> None:
     """Test switch functionality."""
 
@@ -345,14 +362,15 @@ async def test_switch_functionality(
     indirect=["appliance"],
 )
 async def test_program_switch_functionality(
-    hass: HomeAssistant,
-    client: MagicMock,
-    config_entry: MockConfigEntry,
-    integration_setup: Callable[[MagicMock], Awaitable[bool]],
     entity_id: str,
     program_key: ProgramKey,
     initial_state: str,
+    hass: HomeAssistant,
+    config_entry: MockConfigEntry,
+    integration_setup: Callable[[MagicMock], Awaitable[bool]],
+    setup_credentials: None,
     appliance: HomeAppliance,
+    client: MagicMock,
 ) -> None:
     """Test switch functionality."""
 
@@ -450,14 +468,15 @@ async def test_program_switch_functionality(
     ],
 )
 async def test_switch_exception_handling(
-    hass: HomeAssistant,
-    client_with_exception: MagicMock,
-    config_entry: MockConfigEntry,
-    integration_setup: Callable[[MagicMock], Awaitable[bool]],
     entity_id: str,
     service: str,
     mock_attr: str,
     exception_match: str,
+    hass: HomeAssistant,
+    integration_setup: Callable[[MagicMock], Awaitable[bool]],
+    config_entry: MockConfigEntry,
+    setup_credentials: None,
+    client_with_exception: MagicMock,
 ) -> None:
     """Test exception handling."""
     client_with_exception.get_all_programs.side_effect = None
@@ -504,16 +523,18 @@ async def test_switch_exception_handling(
 
 
 @pytest.mark.parametrize(
-    ("entity_id", "service", "state", "appliance"),
+    ("entity_id", "status", "service", "state", "appliance"),
     [
         (
             "switch.fridgefreezer_freezer_super_mode",
+            {SettingKey.REFRIGERATION_FRIDGE_FREEZER_SUPER_MODE_FREEZER: True},
             SERVICE_TURN_ON,
             STATE_ON,
             "FridgeFreezer",
         ),
         (
             "switch.fridgefreezer_freezer_super_mode",
+            {SettingKey.REFRIGERATION_FRIDGE_FREEZER_SUPER_MODE_FREEZER: False},
             SERVICE_TURN_OFF,
             STATE_OFF,
             "FridgeFreezer",
@@ -522,13 +543,16 @@ async def test_switch_exception_handling(
     indirect=["appliance"],
 )
 async def test_ent_desc_switch_functionality(
-    hass: HomeAssistant,
-    client: MagicMock,
-    config_entry: MockConfigEntry,
-    integration_setup: Callable[[MagicMock], Awaitable[bool]],
     entity_id: str,
+    status: dict,
     service: str,
     state: str,
+    hass: HomeAssistant,
+    config_entry: MockConfigEntry,
+    integration_setup: Callable[[MagicMock], Awaitable[bool]],
+    setup_credentials: None,
+    appliance: HomeAppliance,
+    client: MagicMock,
 ) -> None:
     """Test switch functionality - entity description setup."""
 
@@ -546,6 +570,7 @@ async def test_ent_desc_switch_functionality(
         "entity_id",
         "status",
         "service",
+        "mock_attr",
         "appliance",
         "exception_match",
     ),
@@ -554,6 +579,7 @@ async def test_ent_desc_switch_functionality(
             "switch.fridgefreezer_freezer_super_mode",
             {SettingKey.REFRIGERATION_FRIDGE_FREEZER_SUPER_MODE_FREEZER: ""},
             SERVICE_TURN_ON,
+            "set_setting",
             "FridgeFreezer",
             r"Error.*turn.*on.*",
         ),
@@ -561,6 +587,7 @@ async def test_ent_desc_switch_functionality(
             "switch.fridgefreezer_freezer_super_mode",
             {SettingKey.REFRIGERATION_FRIDGE_FREEZER_SUPER_MODE_FREEZER: ""},
             SERVICE_TURN_OFF,
+            "set_setting",
             "FridgeFreezer",
             r"Error.*turn.*off.*",
         ),
@@ -568,14 +595,17 @@ async def test_ent_desc_switch_functionality(
     indirect=["appliance"],
 )
 async def test_ent_desc_switch_exception_handling(
-    hass: HomeAssistant,
-    client_with_exception: MagicMock,
-    config_entry: MockConfigEntry,
-    integration_setup: Callable[[MagicMock], Awaitable[bool]],
     entity_id: str,
     status: dict[SettingKey, str],
     service: str,
+    mock_attr: str,
     exception_match: str,
+    hass: HomeAssistant,
+    integration_setup: Callable[[MagicMock], Awaitable[bool]],
+    config_entry: MockConfigEntry,
+    setup_credentials: None,
+    appliance: HomeAppliance,
+    client_with_exception: MagicMock,
 ) -> None:
     """Test switch exception handling - entity description setup."""
     client_with_exception.get_settings.side_effect = None
@@ -649,16 +679,17 @@ async def test_ent_desc_switch_exception_handling(
     indirect=["appliance"],
 )
 async def test_power_switch(
-    hass: HomeAssistant,
-    client: MagicMock,
-    config_entry: MockConfigEntry,
-    integration_setup: Callable[[MagicMock], Awaitable[bool]],
     entity_id: str,
     allowed_values: list[str | None] | None,
     service: str,
     setting_value_arg: str,
     power_state: str,
+    hass: HomeAssistant,
+    config_entry: MockConfigEntry,
+    integration_setup: Callable[[MagicMock], Awaitable[bool]],
+    setup_credentials: None,
     appliance: HomeAppliance,
+    client: MagicMock,
 ) -> None:
     """Test power switch functionality."""
     client.get_settings.side_effect = None
@@ -697,11 +728,12 @@ async def test_power_switch(
     ],
 )
 async def test_power_switch_fetch_off_state_from_current_value(
+    initial_value: str,
     hass: HomeAssistant,
-    client: MagicMock,
     config_entry: MockConfigEntry,
     integration_setup: Callable[[MagicMock], Awaitable[bool]],
-    initial_value: str,
+    setup_credentials: None,
+    client: MagicMock,
 ) -> None:
     """Test power switch functionality to fetch the off state from the current value."""
     client.get_settings.side_effect = None
@@ -746,14 +778,15 @@ async def test_power_switch_fetch_off_state_from_current_value(
     ],
 )
 async def test_power_switch_service_validation_errors(
-    hass: HomeAssistant,
-    client: MagicMock,
-    config_entry: MockConfigEntry,
-    integration_setup: Callable[[MagicMock], Awaitable[bool]],
-    exception_match: str,
     entity_id: str,
     allowed_values: list[str | None] | None | HomeConnectError,
     service: str,
+    hass: HomeAssistant,
+    config_entry: MockConfigEntry,
+    integration_setup: Callable[[MagicMock], Awaitable[bool]],
+    setup_credentials: None,
+    exception_match: str,
+    client: MagicMock,
 ) -> None:
     """Test power switch functionality validation errors."""
     client.get_settings.side_effect = None
@@ -798,11 +831,13 @@ async def test_power_switch_service_validation_errors(
 )
 async def test_create_program_switch_deprecation_issue(
     hass: HomeAssistant,
-    issue_registry: ir.IssueRegistry,
-    client: MagicMock,
+    appliance: HomeAppliance,
+    service: str,
     config_entry: MockConfigEntry,
     integration_setup: Callable[[MagicMock], Awaitable[bool]],
-    service: str,
+    setup_credentials: None,
+    client: MagicMock,
+    issue_registry: ir.IssueRegistry,
 ) -> None:
     """Test that we create an issue when an automation or script is using a program switch entity or the entity is used by the user."""
     entity_id = "switch.washer_program_mix"
@@ -878,12 +913,14 @@ async def test_create_program_switch_deprecation_issue(
 )
 async def test_program_switch_deprecation_issue_fix(
     hass: HomeAssistant,
-    hass_client: ClientSessionGenerator,
-    issue_registry: ir.IssueRegistry,
-    client: MagicMock,
+    appliance: HomeAppliance,
+    service: str,
     config_entry: MockConfigEntry,
     integration_setup: Callable[[MagicMock], Awaitable[bool]],
-    service: str,
+    setup_credentials: None,
+    client: MagicMock,
+    issue_registry: ir.IssueRegistry,
+    hass_client: ClientSessionGenerator,
 ) -> None:
     """Test we can fix the issues created when a program switch entity is in an automation or in a script or when is used."""
     entity_id = "switch.washer_program_mix"
@@ -990,16 +1027,17 @@ async def test_program_switch_deprecation_issue_fix(
     indirect=["appliance"],
 )
 async def test_options_functionality(
-    hass: HomeAssistant,
-    client: MagicMock,
-    config_entry: MockConfigEntry,
-    integration_setup: Callable[[MagicMock], Awaitable[bool]],
-    set_active_program_options_side_effect: ActiveProgramNotSetError | None,
-    set_selected_program_options_side_effect: SelectedProgramNotSetError | None,
-    called_mock_method: str,
     entity_id: str,
     option_key: OptionKey,
     appliance: HomeAppliance,
+    set_active_program_options_side_effect: ActiveProgramNotSetError | None,
+    set_selected_program_options_side_effect: SelectedProgramNotSetError | None,
+    called_mock_method: str,
+    hass: HomeAssistant,
+    config_entry: MockConfigEntry,
+    integration_setup: Callable[[MagicMock], Awaitable[bool]],
+    setup_credentials: None,
+    client: MagicMock,
 ) -> None:
     """Test options functionality."""
     if set_active_program_options_side_effect:

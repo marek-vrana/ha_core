@@ -32,15 +32,29 @@ def platforms() -> list[str]:
     return [Platform.BUTTON]
 
 
-@pytest.mark.parametrize("appliance", ["Washer"], indirect=True)
-async def test_paired_depaired_devices_flow(
+async def test_buttons(
     hass: HomeAssistant,
-    device_registry: dr.DeviceRegistry,
-    entity_registry: er.EntityRegistry,
-    client: MagicMock,
     config_entry: MockConfigEntry,
     integration_setup: Callable[[MagicMock], Awaitable[bool]],
+    setup_credentials: None,
+    client: MagicMock,
+) -> None:
+    """Test button entities."""
+    assert config_entry.state == ConfigEntryState.NOT_LOADED
+    assert await integration_setup(client)
+    assert config_entry.state == ConfigEntryState.LOADED
+
+
+@pytest.mark.parametrize("appliance", ["Washer"], indirect=True)
+async def test_paired_depaired_devices_flow(
     appliance: HomeAppliance,
+    hass: HomeAssistant,
+    config_entry: MockConfigEntry,
+    integration_setup: Callable[[MagicMock], Awaitable[bool]],
+    setup_credentials: None,
+    client: MagicMock,
+    device_registry: dr.DeviceRegistry,
+    entity_registry: er.EntityRegistry,
 ) -> None:
     """Test that removed devices are correctly removed from and added to hass on API events."""
     assert config_entry.state == ConfigEntryState.NOT_LOADED
@@ -96,14 +110,15 @@ async def test_paired_depaired_devices_flow(
     indirect=["appliance"],
 )
 async def test_connected_devices(
-    hass: HomeAssistant,
-    device_registry: dr.DeviceRegistry,
-    entity_registry: er.EntityRegistry,
-    client: MagicMock,
-    config_entry: MockConfigEntry,
-    integration_setup: Callable[[MagicMock], Awaitable[bool]],
     appliance: HomeAppliance,
     keys_to_check: tuple,
+    hass: HomeAssistant,
+    config_entry: MockConfigEntry,
+    integration_setup: Callable[[MagicMock], Awaitable[bool]],
+    setup_credentials: None,
+    client: MagicMock,
+    device_registry: dr.DeviceRegistry,
+    entity_registry: er.EntityRegistry,
 ) -> None:
     """Test that devices reconnected.
 
@@ -173,9 +188,10 @@ async def test_connected_devices(
 @pytest.mark.parametrize("appliance", ["Washer"], indirect=True)
 async def test_button_entity_availability(
     hass: HomeAssistant,
-    client: MagicMock,
     config_entry: MockConfigEntry,
     integration_setup: Callable[[MagicMock], Awaitable[bool]],
+    setup_credentials: None,
+    client: MagicMock,
     appliance: HomeAppliance,
 ) -> None:
     """Test if button entities availability are based on the appliance connection state."""
@@ -237,9 +253,10 @@ async def test_button_entity_availability(
 )
 async def test_button_functionality(
     hass: HomeAssistant,
-    client: MagicMock,
     config_entry: MockConfigEntry,
     integration_setup: Callable[[MagicMock], Awaitable[bool]],
+    setup_credentials: None,
+    client: MagicMock,
     entity_id: str,
     method_call: str,
     expected_kwargs: dict[str, Any],
@@ -265,9 +282,10 @@ async def test_button_functionality(
 
 async def test_command_button_exception(
     hass: HomeAssistant,
-    client_with_exception: MagicMock,
     config_entry: MockConfigEntry,
     integration_setup: Callable[[MagicMock], Awaitable[bool]],
+    setup_credentials: None,
+    client_with_exception: MagicMock,
 ) -> None:
     """Test if button entities availability are based on the appliance connection state."""
     entity_id = "button.washer_pause_program"
@@ -301,9 +319,10 @@ async def test_command_button_exception(
 
 async def test_stop_program_button_exception(
     hass: HomeAssistant,
-    client_with_exception: MagicMock,
     config_entry: MockConfigEntry,
     integration_setup: Callable[[MagicMock], Awaitable[bool]],
+    setup_credentials: None,
+    client_with_exception: MagicMock,
 ) -> None:
     """Test if button entities availability are based on the appliance connection state."""
     entity_id = "button.washer_stop_program"

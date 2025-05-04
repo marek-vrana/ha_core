@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable, Generator
+from datetime import datetime
 from socket import AddressFamily  # pylint: disable=no-name-in-module
 from typing import Any
 from unittest.mock import AsyncMock, Mock, patch
@@ -20,6 +21,7 @@ from samsungtvws.exceptions import ResponseError
 from samsungtvws.remote import ChannelEmitCommand
 
 from homeassistant.components.samsungtv.const import WEBSOCKET_SSL_PORT
+from homeassistant.util import dt as dt_util
 
 from .const import SAMPLE_DEVICE_INFO_UE48JU6400, SAMPLE_DEVICE_INFO_WIFI
 
@@ -51,7 +53,7 @@ def silent_ssdp_scanner() -> Generator[None]:
 
 
 @pytest.fixture(autouse=True)
-def samsungtv_mock_async_get_local_ip() -> Generator[None]:
+def samsungtv_mock_async_get_local_ip():
     """Mock upnp util's async_get_local_ip."""
     with patch(
         "homeassistant.components.samsungtv.media_player.async_get_local_ip",
@@ -61,7 +63,7 @@ def samsungtv_mock_async_get_local_ip() -> Generator[None]:
 
 
 @pytest.fixture(autouse=True)
-def fake_host_fixture() -> Generator[None]:
+def fake_host_fixture() -> None:
     """Patch gethostbyname."""
     with patch(
         "homeassistant.components.samsungtv.config_flow.socket.gethostbyname",
@@ -71,14 +73,14 @@ def fake_host_fixture() -> Generator[None]:
 
 
 @pytest.fixture(autouse=True)
-def app_list_delay_fixture() -> Generator[None]:
+def app_list_delay_fixture() -> None:
     """Patch APP_LIST_DELAY."""
     with patch("homeassistant.components.samsungtv.media_player.APP_LIST_DELAY", 0):
         yield
 
 
 @pytest.fixture(name="upnp_factory", autouse=True)
-def upnp_factory_fixture() -> Generator[Mock]:
+def upnp_factory_fixture() -> Mock:
     """Patch UpnpFactory."""
     with patch(
         "homeassistant.components.samsungtv.media_player.UpnpFactory",
@@ -90,17 +92,17 @@ def upnp_factory_fixture() -> Generator[Mock]:
 
 
 @pytest.fixture(name="upnp_device")
-def upnp_device_fixture(upnp_factory: Mock) -> Mock:
+async def upnp_device_fixture(upnp_factory: Mock) -> Mock:
     """Patch async_upnp_client."""
     upnp_device = Mock(UpnpDevice)
     upnp_device.services = {}
 
-    upnp_factory.async_create_device.side_effect = [upnp_device]
-    return upnp_device
+    with patch.object(upnp_factory, "async_create_device", side_effect=[upnp_device]):
+        yield upnp_device
 
 
 @pytest.fixture(name="dmr_device")
-def dmr_device_fixture(upnp_device: Mock) -> Generator[Mock]:
+async def dmr_device_fixture(upnp_device: Mock) -> Mock:
     """Patch async_upnp_client."""
     with patch(
         "homeassistant.components.samsungtv.media_player.DmrDevice",
@@ -135,7 +137,7 @@ def dmr_device_fixture(upnp_device: Mock) -> Generator[Mock]:
 
 
 @pytest.fixture(name="upnp_notify_server")
-def upnp_notify_server_fixture(upnp_factory: Mock) -> Generator[Mock]:
+async def upnp_notify_server_fixture(upnp_factory: Mock) -> Mock:
     """Patch async_upnp_client."""
     with patch(
         "homeassistant.components.samsungtv.media_player.AiohttpNotifyServer",
@@ -147,7 +149,7 @@ def upnp_notify_server_fixture(upnp_factory: Mock) -> Generator[Mock]:
 
 
 @pytest.fixture(name="remote")
-def remote_fixture() -> Generator[Mock]:
+def remote_fixture() -> Mock:
     """Patch the samsungctl Remote."""
     with patch("homeassistant.components.samsungtv.bridge.Remote") as remote_class:
         remote = Mock(Remote)
@@ -158,7 +160,7 @@ def remote_fixture() -> Generator[Mock]:
 
 
 @pytest.fixture(name="rest_api")
-def rest_api_fixture() -> Generator[Mock]:
+def rest_api_fixture() -> Mock:
     """Patch the samsungtvws SamsungTVAsyncRest."""
     with patch(
         "homeassistant.components.samsungtv.bridge.SamsungTVAsyncRest",
@@ -171,7 +173,7 @@ def rest_api_fixture() -> Generator[Mock]:
 
 
 @pytest.fixture(name="rest_api_non_ssl_only")
-def rest_api_fixture_non_ssl_only() -> Generator[None]:
+def rest_api_fixture_non_ssl_only() -> Mock:
     """Patch the samsungtvws SamsungTVAsyncRest non-ssl only."""
 
     class MockSamsungTVAsyncRest:
@@ -196,7 +198,7 @@ def rest_api_fixture_non_ssl_only() -> Generator[None]:
 
 
 @pytest.fixture(name="rest_api_failing")
-def rest_api_failure_fixture() -> Generator[None]:
+def rest_api_failure_fixture() -> Mock:
     """Patch the samsungtvws SamsungTVAsyncRest."""
     with patch(
         "homeassistant.components.samsungtv.bridge.SamsungTVAsyncRest",
@@ -207,7 +209,7 @@ def rest_api_failure_fixture() -> Generator[None]:
 
 
 @pytest.fixture(name="remoteencws_failing")
-def remoteencws_failing_fixture() -> Generator[None]:
+def remoteencws_failing_fixture():
     """Patch the samsungtvws SamsungTVEncryptedWSAsyncRemote."""
     with patch(
         "homeassistant.components.samsungtv.bridge.SamsungTVEncryptedWSAsyncRemote.start_listening",
@@ -217,7 +219,7 @@ def remoteencws_failing_fixture() -> Generator[None]:
 
 
 @pytest.fixture(name="remotews")
-def remotews_fixture() -> Generator[Mock]:
+def remotews_fixture() -> Mock:
     """Patch the samsungtvws SamsungTVWS."""
     remotews = Mock(SamsungTVWSAsyncRemote)
     remotews.__aenter__ = AsyncMock(return_value=remotews)
@@ -258,7 +260,7 @@ def remotews_fixture() -> Generator[Mock]:
 
 
 @pytest.fixture(name="remoteencws")
-def remoteencws_fixture() -> Generator[Mock]:
+def remoteencws_fixture() -> Mock:
     """Patch the samsungtvws SamsungTVEncryptedWSAsyncRemote."""
     remoteencws = Mock(SamsungTVEncryptedWSAsyncRemote)
     remoteencws.__aenter__ = AsyncMock(return_value=remoteencws)
@@ -283,8 +285,14 @@ def remoteencws_fixture() -> Generator[Mock]:
         yield remoteencws
 
 
+@pytest.fixture
+def mock_now() -> datetime:
+    """Fixture for dtutil.now."""
+    return dt_util.utcnow()
+
+
 @pytest.fixture(name="mac_address", autouse=True)
-def mac_address_fixture() -> Generator[Mock]:
+def mac_address_fixture() -> Mock:
     """Patch getmac.get_mac_address."""
     with patch("getmac.get_mac_address", return_value=None) as mac:
         yield mac

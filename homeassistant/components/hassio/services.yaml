@@ -30,6 +30,14 @@ addon_stop:
       selector:
         addon:
 
+addon_update:
+  fields:
+    addon:
+      required: true
+      example: core_ssh
+      selector:
+        addon:
+
 host_reboot:
 host_shutdown:
 backup_full:

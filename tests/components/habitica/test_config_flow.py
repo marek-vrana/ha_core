@@ -76,9 +76,8 @@ async def test_form_login(hass: HomeAssistant, mock_setup_entry: AsyncMock) -> N
     assert "login" in result["menu_options"]
     assert result["step_id"] == "user"
 
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"],
-        {"next_step_id": "login"},
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": "login"}
     )
     assert result["type"] is FlowResultType.FORM
     assert result["errors"] == {}
@@ -124,9 +123,8 @@ async def test_form_login_errors(
     assert result["type"] is FlowResultType.MENU
     assert result["step_id"] == "user"
 
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"],
-        {"next_step_id": "login"},
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": "login"}
     )
 
     habitica.login.side_effect = raise_error
@@ -158,7 +156,7 @@ async def test_form_login_errors(
 
 
 @pytest.mark.usefixtures("habitica")
-async def test_form_already_configured(
+async def test_form__already_configured(
     hass: HomeAssistant,
     config_entry: MockConfigEntry,
 ) -> None:
@@ -173,14 +171,13 @@ async def test_form_already_configured(
     assert result["type"] is FlowResultType.MENU
     assert result["step_id"] == "user"
 
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"],
-        {"next_step_id": "login"},
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": "advanced"}
     )
 
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"],
-        user_input=MOCK_DATA_LOGIN_STEP,
+        user_input=MOCK_DATA_ADVANCED_STEP,
     )
 
     assert result["type"] is FlowResultType.ABORT
@@ -199,13 +196,18 @@ async def test_form_advanced(hass: HomeAssistant, mock_setup_entry: AsyncMock) -
     assert "advanced" in result["menu_options"]
     assert result["step_id"] == "user"
 
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"],
-        {"next_step_id": "advanced"},
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": "advanced"}
     )
     assert result["type"] is FlowResultType.FORM
     assert result["errors"] == {}
     assert result["step_id"] == "advanced"
+
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": "advanced"}
+    )
+    assert result["type"] is FlowResultType.FORM
+    assert result["errors"] == {}
 
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"],
@@ -247,9 +249,8 @@ async def test_form_advanced_errors(
     assert result["type"] is FlowResultType.MENU
     assert result["step_id"] == "user"
 
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"],
-        {"next_step_id": "advanced"},
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": "advanced"}
     )
 
     habitica.get_user.side_effect = raise_error
@@ -297,9 +298,8 @@ async def test_form_advanced_already_configured(
     assert result["type"] is FlowResultType.MENU
     assert result["step_id"] == "user"
 
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"],
-        {"next_step_id": "advanced"},
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": "advanced"}
     )
 
     result = await hass.config_entries.flow.async_configure(

@@ -40,7 +40,8 @@ PARALLEL_UPDATES = 0
 
 ATTR_WORK_AREA_ID_ASSIGNMENT = "work_area_id_assignment"
 
-ERROR_KEYS = [
+ERROR_KEY_LIST = [
+    "no_error",
     "alarm_mower_in_motion",
     "alarm_mower_lifted",
     "alarm_mower_stopped",
@@ -49,10 +50,12 @@ ERROR_KEYS = [
     "alarm_outside_geofence",
     "angular_sensor_problem",
     "battery_problem",
+    "battery_problem",
     "battery_restriction_due_to_ambient_temperature",
     "can_error",
     "charging_current_too_high",
     "charging_station_blocked",
+    "charging_system_problem",
     "charging_system_problem",
     "collision_sensor_defect",
     "collision_sensor_error",
@@ -64,17 +67,23 @@ ERROR_KEYS = [
     "connection_changed",
     "connection_not_changed",
     "connectivity_problem",
+    "connectivity_problem",
+    "connectivity_problem",
+    "connectivity_problem",
+    "connectivity_problem",
+    "connectivity_problem",
     "connectivity_settings_restored",
     "cutting_drive_motor_1_defect",
     "cutting_drive_motor_2_defect",
     "cutting_drive_motor_3_defect",
     "cutting_height_blocked",
+    "cutting_height_problem",
     "cutting_height_problem_curr",
     "cutting_height_problem_dir",
     "cutting_height_problem_drive",
-    "cutting_height_problem",
     "cutting_motor_problem",
     "cutting_stopped_slope_too_steep",
+    "cutting_system_blocked",
     "cutting_system_blocked",
     "cutting_system_imbalance_warning",
     "cutting_system_major_imbalance",
@@ -83,8 +92,12 @@ ERROR_KEYS = [
     "docking_sensor_defect",
     "electronic_problem",
     "empty_battery",
+    MowerStates.ERROR.lower(),
+    MowerStates.ERROR_AT_POWER_UP.lower(),
+    MowerStates.FATAL_ERROR.lower(),
     "folding_cutting_deck_sensor_defect",
     "folding_sensor_activated",
+    "geofence_problem",
     "geofence_problem",
     "gps_navigation_problem",
     "guide_1_not_found",
@@ -103,6 +116,7 @@ ERROR_KEYS = [
     "lift_sensor_defect",
     "lifted",
     "limited_cutting_height_range",
+    "limited_cutting_height_range",
     "loop_sensor_defect",
     "loop_sensor_problem_front",
     "loop_sensor_problem_left",
@@ -115,7 +129,6 @@ ERROR_KEYS = [
     "no_accurate_position_from_satellites",
     "no_confirmed_position",
     "no_drive",
-    "no_error",
     "no_loop_signal",
     "no_power_in_charging_station",
     "no_response_from_charger",
@@ -126,6 +139,9 @@ ERROR_KEYS = [
     "safety_function_faulty",
     "settings_restored",
     "sim_card_locked",
+    "sim_card_locked",
+    "sim_card_locked",
+    "sim_card_locked",
     "sim_card_not_found",
     "sim_card_requires_pin",
     "slipped_mower_has_slipped_situation_not_solved_with_moving_pattern",
@@ -134,6 +150,13 @@ ERROR_KEYS = [
     "stop_button_problem",
     "stuck_in_charging_station",
     "switch_cord_problem",
+    "temporary_battery_problem",
+    "temporary_battery_problem",
+    "temporary_battery_problem",
+    "temporary_battery_problem",
+    "temporary_battery_problem",
+    "temporary_battery_problem",
+    "temporary_battery_problem",
     "temporary_battery_problem",
     "tilt_sensor_problem",
     "too_high_discharge_current",
@@ -166,19 +189,11 @@ ERROR_KEYS = [
     "zone_generator_problem",
 ]
 
-ERROR_STATES = [
-    MowerStates.ERROR_AT_POWER_UP,
+ERROR_STATES = {
     MowerStates.ERROR,
+    MowerStates.ERROR_AT_POWER_UP,
     MowerStates.FATAL_ERROR,
-    MowerStates.OFF,
-    MowerStates.STOPPED,
-    MowerStates.WAIT_POWER_UP,
-    MowerStates.WAIT_UPDATING,
-]
-
-ERROR_KEY_LIST = list(
-    dict.fromkeys(ERROR_KEYS + [state.lower() for state in ERROR_STATES])
-)
+}
 
 RESTRICTED_REASONS: list = [
     RestrictedReasons.ALL_WORK_AREAS_COMPLETED,
@@ -277,7 +292,6 @@ MOWER_SENSOR_TYPES: tuple[AutomowerSensorEntityDescription, ...] = (
     AutomowerSensorEntityDescription(
         key="cutting_blade_usage_time",
         translation_key="cutting_blade_usage_time",
-        entity_category=EntityCategory.DIAGNOSTIC,
         state_class=SensorStateClass.TOTAL,
         device_class=SensorDeviceClass.DURATION,
         native_unit_of_measurement=UnitOfTime.SECONDS,
@@ -288,7 +302,6 @@ MOWER_SENSOR_TYPES: tuple[AutomowerSensorEntityDescription, ...] = (
     AutomowerSensorEntityDescription(
         key="downtime",
         translation_key="downtime",
-        entity_category=EntityCategory.DIAGNOSTIC,
         state_class=SensorStateClass.TOTAL,
         device_class=SensorDeviceClass.DURATION,
         entity_registry_enabled_default=False,
@@ -373,7 +386,6 @@ MOWER_SENSOR_TYPES: tuple[AutomowerSensorEntityDescription, ...] = (
     AutomowerSensorEntityDescription(
         key="uptime",
         translation_key="uptime",
-        entity_category=EntityCategory.DIAGNOSTIC,
         state_class=SensorStateClass.TOTAL,
         device_class=SensorDeviceClass.DURATION,
         entity_registry_enabled_default=False,

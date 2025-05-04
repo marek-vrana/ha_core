@@ -20,13 +20,9 @@ from homeassistant.components.lock import (
 from homeassistant.const import ATTR_ENTITY_ID
 from homeassistant.core import HomeAssistant
 
-from .conftest import MockGenericDeviceEntryType
-
 
 async def test_lock_entity_no_open(
-    hass: HomeAssistant,
-    mock_client: APIClient,
-    mock_generic_device_entry: MockGenericDeviceEntryType,
+    hass: HomeAssistant, mock_client: APIClient, mock_generic_device_entry
 ) -> None:
     """Test a generic lock entity that does not support open."""
     entity_info = [
@@ -62,9 +58,7 @@ async def test_lock_entity_no_open(
 
 
 async def test_lock_entity_start_locked(
-    hass: HomeAssistant,
-    mock_client: APIClient,
-    mock_generic_device_entry: MockGenericDeviceEntryType,
+    hass: HomeAssistant, mock_client: APIClient, mock_generic_device_entry
 ) -> None:
     """Test a generic lock entity that does not support open."""
     entity_info = [
@@ -89,9 +83,7 @@ async def test_lock_entity_start_locked(
 
 
 async def test_lock_entity_supports_open(
-    hass: HomeAssistant,
-    mock_client: APIClient,
-    mock_generic_device_entry: MockGenericDeviceEntryType,
+    hass: HomeAssistant, mock_client: APIClient, mock_generic_device_entry
 ) -> None:
     """Test a generic lock entity that supports open."""
     entity_info = [

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from functools import lru_cache, partial
-from operator import methodcaller
 from typing import TYPE_CHECKING, Any, cast
 
 from aioesphomeapi import (
@@ -38,8 +37,6 @@ from .entity import (
     esphome_state_property,
     platform_async_setup_entry,
 )
-
-PARALLEL_UPDATES = 0
 
 FLASH_LENGTHS = {FLASH_SHORT: 2, FLASH_LONG: 10}
 
@@ -109,7 +106,7 @@ def _mired_to_kelvin(mired_temperature: float) -> int:
 def _color_mode_to_ha(mode: int) -> str:
     """Convert an esphome color mode to a HA color mode constant.
 
-    Choose the color mode that best matches the feature-set.
+    Choses the color mode that best matches the feature-set.
     """
     candidates = []
     for ha_mode, cap_lists in _COLOR_MODE_MAPPING.items():
@@ -149,7 +146,7 @@ def _least_complex_color_mode(color_modes: tuple[int, ...]) -> int:
     # popcount with bin() function because it appears
     # to be the best way: https://stackoverflow.com/a/9831671
     color_modes_list = list(color_modes)
-    color_modes_list.sort(key=methodcaller("bit_count"))
+    color_modes_list.sort(key=lambda mode: (mode).bit_count())
     return color_modes_list[0]
 
 
@@ -161,7 +158,7 @@ class EsphomeLight(EsphomeEntity[LightInfo, LightState], LightEntity):
 
     @property
     @esphome_state_property
-    def is_on(self) -> bool:
+    def is_on(self) -> bool | None:
         """Return true if the light is on."""
         return self._state.state
 
@@ -293,13 +290,13 @@ class EsphomeLight(EsphomeEntity[LightInfo, LightState], LightEntity):
 
     @property
     @esphome_state_property
-    def brightness(self) -> int:
+    def brightness(self) -> int | None:
         """Return the brightness of this light between 0..255."""
         return round(self._state.brightness * 255)
 
     @property
     @esphome_state_property
-    def color_mode(self) -> str:
+    def color_mode(self) -> str | None:
         """Return the color mode of the light."""
         if not self._supports_color_mode:
             supported_color_modes = self.supported_color_modes
@@ -311,7 +308,7 @@ class EsphomeLight(EsphomeEntity[LightInfo, LightState], LightEntity):
 
     @property
     @esphome_state_property
-    def rgb_color(self) -> tuple[int, int, int]:
+    def rgb_color(self) -> tuple[int, int, int] | None:
         """Return the rgb color value [int, int, int]."""
         state = self._state
         if not self._supports_color_mode:
@@ -329,7 +326,7 @@ class EsphomeLight(EsphomeEntity[LightInfo, LightState], LightEntity):
 
     @property
     @esphome_state_property
-    def rgbw_color(self) -> tuple[int, int, int, int]:
+    def rgbw_color(self) -> tuple[int, int, int, int] | None:
         """Return the rgbw color value [int, int, int, int]."""
         white = round(self._state.white * 255)
         rgb = cast("tuple[int, int, int]", self.rgb_color)
@@ -337,7 +334,7 @@ class EsphomeLight(EsphomeEntity[LightInfo, LightState], LightEntity):
 
     @property
     @esphome_state_property
-    def rgbww_color(self) -> tuple[int, int, int, int, int]:
+    def rgbww_color(self) -> tuple[int, int, int, int, int] | None:
         """Return the rgbww color value [int, int, int, int, int]."""
         state = self._state
         rgb = cast("tuple[int, int, int]", self.rgb_color)
@@ -373,7 +370,7 @@ class EsphomeLight(EsphomeEntity[LightInfo, LightState], LightEntity):
 
     @property
     @esphome_state_property
-    def effect(self) -> str:
+    def effect(self) -> str | None:
         """Return the current effect."""
         return self._state.effect
 

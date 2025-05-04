@@ -483,7 +483,7 @@
     }),
     'original_device_class': <NumberDeviceClass.DISTANCE: 'distance'>,
     'original_icon': None,
-    'original_name': 'Altitude above sea level',
+    'original_name': 'Altitude above Sea Level',
     'platform': 'matter',
     'previous_unique_id': None,
     'supported_features': 0,
@@ -496,7 +496,7 @@
   StateSnapshot({
     'attributes': ReadOnlyDict({
       'device_class': 'distance',
-      'friendly_name': 'Eve Weather Altitude above sea level',
+      'friendly_name': 'Eve Weather Altitude above Sea Level',
       'max': 9000,
       'min': 0,
       'mode': <NumberMode.BOX: 'box'>,

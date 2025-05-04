@@ -12,7 +12,6 @@ from pyoverkiz.enums import APIType, OverkizState, UIClass, UIWidget
 from pyoverkiz.exceptions import (
     BadCredentialsException,
     MaintenanceException,
-    NotAuthenticatedException,
     NotSuchTokenException,
     TooManyRequestsException,
 )
@@ -93,11 +92,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: OverkizDataConfigEntry) 
             scenarios = await client.get_scenarios()
         else:
             scenarios = []
-    except (
-        BadCredentialsException,
-        NotSuchTokenException,
-        NotAuthenticatedException,
-    ) as exception:
+    except (BadCredentialsException, NotSuchTokenException) as exception:
         raise ConfigEntryAuthFailed("Invalid authentication") from exception
     except TooManyRequestsException as exception:
         raise ConfigEntryNotReady("Too many requests, try again later") from exception

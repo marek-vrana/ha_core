@@ -1128,15 +1128,6 @@
       },
       "water_interval": {
         "name": "Water interval"
-      },
-      "hush_duration": {
-        "name": "Hush duration"
-      },
-      "temperature_control_accuracy": {
-        "name": "Temperature control accuracy"
-      },
-      "external_temperature_sensor_value": {
-        "name": "External temperature sensor value"
       }
     },
     "select": {
@@ -1358,15 +1349,6 @@
       },
       "speed": {
         "name": "Speed"
-      },
-      "led_brightness": {
-        "name": "LED brightness"
-      },
-      "alarm_sound_level": {
-        "name": "Alarm sound level"
-      },
-      "alarm_sound_mode": {
-        "name": "Alarm sound mode"
       }
     },
     "sensor": {
@@ -1505,7 +1487,7 @@
       "adaptation_run_status": {
         "name": "Adaptation run status",
         "state": {
-          "nothing": "[%key:common::state::idle%]",
+          "nothing": "Idle",
           "something": "State"
         },
         "state_attributes": {
@@ -1527,7 +1509,7 @@
         "name": "Software error",
         "state": {
           "nothing": "Good",
-          "something": "[%key:common::state::error%]"
+          "something": "Error"
         },
         "state_attributes": {
           "top_pcb_sensor_error": {
@@ -1608,7 +1590,7 @@
         "name": "Floor temperature"
       },
       "self_test": {
-        "name": "Self-test result"
+        "name": "Self test result"
       },
       "voc_index": {
         "name": "VOC index"
@@ -1717,9 +1699,6 @@
       },
       "device_status": {
         "name": "Device status"
-      },
-      "lifetime": {
-        "name": "Lifetime"
       }
     },
     "switch": {
@@ -1862,7 +1841,7 @@
         "name": "Mute siren"
       },
       "self_test_switch": {
-        "name": "Self-test"
+        "name": "Self test"
       },
       "output_switch": {
         "name": "Output switch"
@@ -1929,12 +1908,6 @@
       },
       "auto_clean": {
         "name": "Auto clean"
-      },
-      "test_mode": {
-        "name": "Test mode"
-      },
-      "external_temperature_sensor": {
-        "name": "External temperature sensor"
       }
     }
   }

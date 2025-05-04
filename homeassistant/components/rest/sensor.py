@@ -36,7 +36,6 @@ from homeassistant.helpers.trigger_template_entity import (
     CONF_AVAILABILITY,
     CONF_PICTURE,
     ManualTriggerSensorEntity,
-    ValueTemplate,
 )
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
@@ -139,7 +138,7 @@ class RestSensor(ManualTriggerSensorEntity, RestEntity):
             config.get(CONF_RESOURCE_TEMPLATE),
             config[CONF_FORCE_UPDATE],
         )
-        self._value_template: ValueTemplate | None = config.get(CONF_VALUE_TEMPLATE)
+        self._value_template = config.get(CONF_VALUE_TEMPLATE)
         self._json_attrs = config.get(CONF_JSON_ATTRS)
         self._json_attrs_path = config.get(CONF_JSON_ATTRS_PATH)
         self._attr_extra_state_attributes = {}
@@ -166,19 +165,16 @@ class RestSensor(ManualTriggerSensorEntity, RestEntity):
             )
             value = self.rest.data
 
-        variables = self._template_variables_with_value(value)
-        if not self._render_availability_template(variables):
-            self.async_write_ha_state()
-            return
-
         if self._json_attrs:
             self._attr_extra_state_attributes = parse_json_attributes(
                 value, self._json_attrs, self._json_attrs_path
             )
 
+        raw_value = value
+
         if value is not None and self._value_template is not None:
-            value = self._value_template.async_render_as_value_template(
-                self.entity_id, variables, None
+            value = self._value_template.async_render_with_possible_json_value(
+                value, None
             )
 
         if value is None or self.device_class not in (
@@ -186,7 +182,7 @@ class RestSensor(ManualTriggerSensorEntity, RestEntity):
             SensorDeviceClass.TIMESTAMP,
         ):
             self._attr_native_value = value
-            self._process_manual_data(variables)
+            self._process_manual_data(raw_value)
             self.async_write_ha_state()
             return
 
@@ -194,5 +190,5 @@ class RestSensor(ManualTriggerSensorEntity, RestEntity):
             value, self.entity_id, self.device_class
         )
 
-        self._process_manual_data(variables)
+        self._process_manual_data(raw_value)
         self.async_write_ha_state()

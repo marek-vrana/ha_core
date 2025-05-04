@@ -3,7 +3,6 @@
 from unittest.mock import AsyncMock, patch
 
 from freezegun.api import FrozenDateTimeFactory
-import pytest
 from syrupy import SnapshotAssertion
 
 from homeassistant.components.wmspro.const import DOMAIN
@@ -30,7 +29,7 @@ async def test_cover_device(
     hass: HomeAssistant,
     mock_config_entry: MockConfigEntry,
     mock_hub_ping: AsyncMock,
-    mock_hub_configuration_prod_awning_dimmer: AsyncMock,
+    mock_hub_configuration_prod: AsyncMock,
     mock_hub_status_prod_awning: AsyncMock,
     device_registry: dr.DeviceRegistry,
     snapshot: SnapshotAssertion,
@@ -38,7 +37,7 @@ async def test_cover_device(
     """Test that a cover device is created correctly."""
     assert await setup_config_entry(hass, mock_config_entry)
     assert len(mock_hub_ping.mock_calls) == 1
-    assert len(mock_hub_configuration_prod_awning_dimmer.mock_calls) == 1
+    assert len(mock_hub_configuration_prod.mock_calls) == 1
     assert len(mock_hub_status_prod_awning.mock_calls) == 2
 
     device_entry = device_registry.async_get_device(identifiers={(DOMAIN, "58717")})
@@ -50,7 +49,7 @@ async def test_cover_update(
     hass: HomeAssistant,
     mock_config_entry: MockConfigEntry,
     mock_hub_ping: AsyncMock,
-    mock_hub_configuration_prod_awning_dimmer: AsyncMock,
+    mock_hub_configuration_prod: AsyncMock,
     mock_hub_status_prod_awning: AsyncMock,
     freezer: FrozenDateTimeFactory,
     snapshot: SnapshotAssertion,
@@ -58,7 +57,7 @@ async def test_cover_update(
     """Test that a cover entity is created and updated correctly."""
     assert await setup_config_entry(hass, mock_config_entry)
     assert len(mock_hub_ping.mock_calls) == 1
-    assert len(mock_hub_configuration_prod_awning_dimmer.mock_calls) == 1
+    assert len(mock_hub_configuration_prod.mock_calls) == 1
     assert len(mock_hub_status_prod_awning.mock_calls) == 2
 
     entity = hass.states.get("cover.markise")
@@ -73,41 +72,21 @@ async def test_cover_update(
     assert len(mock_hub_status_prod_awning.mock_calls) >= 3
 
 
-@pytest.mark.parametrize(
-    ("mock_hub_configuration", "mock_hub_status", "entity_name"),
-    [
-        (
-            "mock_hub_configuration_prod_awning_dimmer",
-            "mock_hub_status_prod_awning",
-            "cover.markise",
-        ),
-        (
-            "mock_hub_configuration_prod_roller_shutter",
-            "mock_hub_status_prod_roller_shutter",
-            "cover.wohnebene_alle",
-        ),
-    ],
-)
 async def test_cover_open_and_close(
     hass: HomeAssistant,
     mock_config_entry: MockConfigEntry,
     mock_hub_ping: AsyncMock,
-    mock_hub_configuration: AsyncMock,
-    mock_hub_status: AsyncMock,
+    mock_hub_configuration_prod: AsyncMock,
+    mock_hub_status_prod_awning: AsyncMock,
     mock_action_call: AsyncMock,
-    request: pytest.FixtureRequest,
-    entity_name: str,
 ) -> None:
     """Test that a cover entity is opened and closed correctly."""
-    mock_hub_configuration = request.getfixturevalue(mock_hub_configuration)
-    mock_hub_status = request.getfixturevalue(mock_hub_status)
-
     assert await setup_config_entry(hass, mock_config_entry)
     assert len(mock_hub_ping.mock_calls) == 1
-    assert len(mock_hub_configuration.mock_calls) == 1
-    assert len(mock_hub_status.mock_calls) >= 1
+    assert len(mock_hub_configuration_prod.mock_calls) == 1
+    assert len(mock_hub_status_prod_awning.mock_calls) >= 1
 
-    entity = hass.states.get(entity_name)
+    entity = hass.states.get("cover.markise")
     assert entity is not None
     assert entity.state == STATE_CLOSED
     assert entity.attributes["current_position"] == 0
@@ -116,7 +95,7 @@ async def test_cover_open_and_close(
         "wmspro.destination.Destination.refresh",
         return_value=True,
     ):
-        before = len(mock_hub_status.mock_calls)
+        before = len(mock_hub_status_prod_awning.mock_calls)
 
         await hass.services.async_call(
             Platform.COVER,
@@ -125,17 +104,17 @@ async def test_cover_open_and_close(
             blocking=True,
         )
 
-        entity = hass.states.get(entity_name)
+        entity = hass.states.get("cover.markise")
         assert entity is not None
         assert entity.state == STATE_OPEN
         assert entity.attributes["current_position"] == 100
-        assert len(mock_hub_status.mock_calls) == before
+        assert len(mock_hub_status_prod_awning.mock_calls) == before
 
     with patch(
         "wmspro.destination.Destination.refresh",
         return_value=True,
     ):
-        before = len(mock_hub_status.mock_calls)
+        before = len(mock_hub_status_prod_awning.mock_calls)
 
         await hass.services.async_call(
             Platform.COVER,
@@ -144,48 +123,28 @@ async def test_cover_open_and_close(
             blocking=True,
         )
 
-        entity = hass.states.get(entity_name)
+        entity = hass.states.get("cover.markise")
         assert entity is not None
         assert entity.state == STATE_CLOSED
         assert entity.attributes["current_position"] == 0
-        assert len(mock_hub_status.mock_calls) == before
+        assert len(mock_hub_status_prod_awning.mock_calls) == before
 
 
-@pytest.mark.parametrize(
-    ("mock_hub_configuration", "mock_hub_status", "entity_name"),
-    [
-        (
-            "mock_hub_configuration_prod_awning_dimmer",
-            "mock_hub_status_prod_awning",
-            "cover.markise",
-        ),
-        (
-            "mock_hub_configuration_prod_roller_shutter",
-            "mock_hub_status_prod_roller_shutter",
-            "cover.wohnebene_alle",
-        ),
-    ],
-)
 async def test_cover_open_to_pos(
     hass: HomeAssistant,
     mock_config_entry: MockConfigEntry,
     mock_hub_ping: AsyncMock,
-    mock_hub_configuration: AsyncMock,
-    mock_hub_status: AsyncMock,
+    mock_hub_configuration_prod: AsyncMock,
+    mock_hub_status_prod_awning: AsyncMock,
     mock_action_call: AsyncMock,
-    request: pytest.FixtureRequest,
-    entity_name: str,
 ) -> None:
     """Test that a cover entity is opened to correct position."""
-    mock_hub_configuration = request.getfixturevalue(mock_hub_configuration)
-    mock_hub_status = request.getfixturevalue(mock_hub_status)
-
     assert await setup_config_entry(hass, mock_config_entry)
     assert len(mock_hub_ping.mock_calls) == 1
-    assert len(mock_hub_configuration.mock_calls) == 1
-    assert len(mock_hub_status.mock_calls) >= 1
+    assert len(mock_hub_configuration_prod.mock_calls) == 1
+    assert len(mock_hub_status_prod_awning.mock_calls) >= 1
 
-    entity = hass.states.get(entity_name)
+    entity = hass.states.get("cover.markise")
     assert entity is not None
     assert entity.state == STATE_CLOSED
     assert entity.attributes["current_position"] == 0
@@ -194,7 +153,7 @@ async def test_cover_open_to_pos(
         "wmspro.destination.Destination.refresh",
         return_value=True,
     ):
-        before = len(mock_hub_status.mock_calls)
+        before = len(mock_hub_status_prod_awning.mock_calls)
 
         await hass.services.async_call(
             Platform.COVER,
@@ -203,48 +162,28 @@ async def test_cover_open_to_pos(
             blocking=True,
         )
 
-        entity = hass.states.get(entity_name)
+        entity = hass.states.get("cover.markise")
         assert entity is not None
         assert entity.state == STATE_OPEN
         assert entity.attributes["current_position"] == 50
-        assert len(mock_hub_status.mock_calls) == before
+        assert len(mock_hub_status_prod_awning.mock_calls) == before
 
 
-@pytest.mark.parametrize(
-    ("mock_hub_configuration", "mock_hub_status", "entity_name"),
-    [
-        (
-            "mock_hub_configuration_prod_awning_dimmer",
-            "mock_hub_status_prod_awning",
-            "cover.markise",
-        ),
-        (
-            "mock_hub_configuration_prod_roller_shutter",
-            "mock_hub_status_prod_roller_shutter",
-            "cover.wohnebene_alle",
-        ),
-    ],
-)
 async def test_cover_open_and_stop(
     hass: HomeAssistant,
     mock_config_entry: MockConfigEntry,
     mock_hub_ping: AsyncMock,
-    mock_hub_configuration: AsyncMock,
-    mock_hub_status: AsyncMock,
+    mock_hub_configuration_prod: AsyncMock,
+    mock_hub_status_prod_awning: AsyncMock,
     mock_action_call: AsyncMock,
-    request: pytest.FixtureRequest,
-    entity_name: str,
 ) -> None:
     """Test that a cover entity is opened and stopped correctly."""
-    mock_hub_configuration = request.getfixturevalue(mock_hub_configuration)
-    mock_hub_status = request.getfixturevalue(mock_hub_status)
-
     assert await setup_config_entry(hass, mock_config_entry)
     assert len(mock_hub_ping.mock_calls) == 1
-    assert len(mock_hub_configuration.mock_calls) == 1
-    assert len(mock_hub_status.mock_calls) >= 1
+    assert len(mock_hub_configuration_prod.mock_calls) == 1
+    assert len(mock_hub_status_prod_awning.mock_calls) >= 1
 
-    entity = hass.states.get(entity_name)
+    entity = hass.states.get("cover.markise")
     assert entity is not None
     assert entity.state == STATE_CLOSED
     assert entity.attributes["current_position"] == 0
@@ -253,7 +192,7 @@ async def test_cover_open_and_stop(
         "wmspro.destination.Destination.refresh",
         return_value=True,
     ):
-        before = len(mock_hub_status.mock_calls)
+        before = len(mock_hub_status_prod_awning.mock_calls)
 
         await hass.services.async_call(
             Platform.COVER,
@@ -262,17 +201,17 @@ async def test_cover_open_and_stop(
             blocking=True,
         )
 
-        entity = hass.states.get(entity_name)
+        entity = hass.states.get("cover.markise")
         assert entity is not None
         assert entity.state == STATE_OPEN
         assert entity.attributes["current_position"] == 80
-        assert len(mock_hub_status.mock_calls) == before
+        assert len(mock_hub_status_prod_awning.mock_calls) == before
 
     with patch(
         "wmspro.destination.Destination.refresh",
         return_value=True,
     ):
-        before = len(mock_hub_status.mock_calls)
+        before = len(mock_hub_status_prod_awning.mock_calls)
 
         await hass.services.async_call(
             Platform.COVER,
@@ -281,8 +220,8 @@ async def test_cover_open_and_stop(
             blocking=True,
         )
 
-        entity = hass.states.get(entity_name)
+        entity = hass.states.get("cover.markise")
         assert entity is not None
         assert entity.state == STATE_OPEN
         assert entity.attributes["current_position"] == 80
-        assert len(mock_hub_status.mock_calls) == before
+        assert len(mock_hub_status_prod_awning.mock_calls) == before

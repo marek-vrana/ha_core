@@ -597,16 +597,6 @@ _CLASS_MATCH: dict[str, list[ClassTypeHintMatch]] = {
                 ),
             ],
         ),
-        ClassTypeHintMatch(
-            base_class="ConfigSubentryFlow",
-            matches=[
-                TypeHintMatch(
-                    function_name="async_step_*",
-                    arg_types={},
-                    return_type="SubentryFlowResult",
-                ),
-            ],
-        ),
     ],
 }
 # Overriding properties and functions are normally checked by mypy, and will only
@@ -1374,7 +1364,7 @@ _INHERITANCE_MATCH: dict[str, list[ClassTypeHintMatch]] = {
                 ),
                 TypeHintMatch(
                     function_name="location_accuracy",
-                    return_type="float",
+                    return_type="int",
                 ),
                 TypeHintMatch(
                     function_name="location_name",

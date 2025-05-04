@@ -1,7 +1,7 @@
 """Axis network device abstraction."""
 
 from asyncio import timeout
-from collections.abc import Mapping
+from types import MappingProxyType
 from typing import Any
 
 import axis
@@ -23,7 +23,7 @@ from ..errors import AuthenticationRequired, CannotConnect
 
 async def get_axis_api(
     hass: HomeAssistant,
-    config: Mapping[str, Any],
+    config: MappingProxyType[str, Any],
 ) -> axis.AxisDevice:
     """Create a Axis device API."""
     session = get_async_client(hass, verify_ssl=False)

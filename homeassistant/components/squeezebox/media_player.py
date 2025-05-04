@@ -446,9 +446,6 @@ class SqueezeBoxMediaPlayerEntity(SqueezeboxEntity, MediaPlayerEntity):
         """Send the play_media command to the media player."""
         index = None
 
-        if media_type:
-            media_type = media_type.lower()
-
         enqueue: MediaPlayerEnqueue | None = kwargs.get(ATTR_MEDIA_ENQUEUE)
 
         if enqueue == MediaPlayerEnqueue.ADD:
@@ -619,9 +616,6 @@ class SqueezeBoxMediaPlayerEntity(SqueezeboxEntity, MediaPlayerEntity):
             media_content_type,
             media_content_id,
         )
-
-        if media_content_type:
-            media_content_type = media_content_type.lower()
 
         if media_content_type in [None, "library"]:
             return await library_payload(self.hass, self._player, self._browse_data)

@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from pyschlage.lock import AUTO_LOCK_TIMES
-
 from homeassistant.components.select import SelectEntity, SelectEntityDescription
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
@@ -17,7 +15,16 @@ _DESCRIPTIONS = (
         key="auto_lock_time",
         translation_key="auto_lock_time",
         entity_category=EntityCategory.CONFIG,
-        options=[str(n) for n in AUTO_LOCK_TIMES],
+        # valid values are from Schlage UI and validated by pyschlage
+        options=[
+            "0",
+            "15",
+            "30",
+            "60",
+            "120",
+            "240",
+            "300",
+        ],
     ),
 )
 

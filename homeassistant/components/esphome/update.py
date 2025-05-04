@@ -18,6 +18,7 @@ from homeassistant.components.update import (
     UpdateEntity,
     UpdateEntityFeature,
 )
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import device_registry as dr
@@ -26,7 +27,6 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util.enum import try_parse_enum
 
-from .const import DOMAIN
 from .coordinator import ESPHomeDashboardCoordinator
 from .dashboard import async_get_dashboard
 from .domain_data import DomainData
@@ -36,9 +36,7 @@ from .entity import (
     esphome_state_property,
     platform_async_setup_entry,
 )
-from .entry_data import ESPHomeConfigEntry, RuntimeEntryData
-
-PARALLEL_UPDATES = 0
+from .entry_data import RuntimeEntryData
 
 KEY_UPDATE_LOCK = "esphome_update_lock"
 
@@ -47,7 +45,7 @@ NO_FEATURES = UpdateEntityFeature(0)
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ESPHomeConfigEntry,
+    entry: ConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Set up ESPHome update based on a config entry."""
@@ -70,6 +68,7 @@ async def async_setup_entry(
     @callback
     def _async_setup_update_entity() -> None:
         """Set up the update entity."""
+        nonlocal unsubs
         assert dashboard is not None
         # Keep listening until device is available
         if not entry_data.available or not dashboard.last_update_success:
@@ -94,12 +93,10 @@ async def async_setup_entry(
         _async_setup_update_entity()
         return
 
-    unsubs.extend(
-        [
-            entry_data.async_subscribe_device_updated(_async_setup_update_entity),
-            dashboard.async_add_listener(_async_setup_update_entity),
-        ]
-    )
+    unsubs = [
+        entry_data.async_subscribe_device_updated(_async_setup_update_entity),
+        dashboard.async_add_listener(_async_setup_update_entity),
+    ]
 
 
 class ESPHomeDashboardUpdateEntity(
@@ -110,6 +107,7 @@ class ESPHomeDashboardUpdateEntity(
     _attr_has_entity_name = True
     _attr_device_class = UpdateDeviceClass.FIRMWARE
     _attr_title = "ESPHome"
+    _attr_name = "Firmware"
     _attr_release_url = "https://esphome.io/changelog/"
     _attr_entity_registry_enabled_default = False
 
@@ -202,23 +200,16 @@ class ESPHomeDashboardUpdateEntity(
             api = coordinator.api
             device = coordinator.data.get(self._device_info.name)
             assert device is not None
-            configuration = device["configuration"]
             try:
-                if not await api.compile(configuration):
+                if not await api.compile(device["configuration"]):
                     raise HomeAssistantError(
-                        translation_domain=DOMAIN,
-                        translation_key="error_compiling",
-                        translation_placeholders={
-                            "configuration": configuration,
-                        },
+                        f"Error compiling {device['configuration']}; "
+                        "Try again in ESPHome dashboard for more information."
                     )
-                if not await api.upload(configuration, "OTA"):
+                if not await api.upload(device["configuration"], "OTA"):
                     raise HomeAssistantError(
-                        translation_domain=DOMAIN,
-                        translation_key="error_uploading",
-                        translation_placeholders={
-                            "configuration": configuration,
-                        },
+                        f"Error updating {device['configuration']} via OTA; "
+                        "Try again in ESPHome dashboard for more information."
                     )
             finally:
                 await self.coordinator.async_request_refresh()
@@ -242,7 +233,7 @@ class ESPHomeUpdateEntity(EsphomeEntity[UpdateInfo, UpdateState], UpdateEntity):
 
     @property
     @esphome_state_property
-    def installed_version(self) -> str:
+    def installed_version(self) -> str | None:
         """Return the installed version."""
         return self._state.current_version
 
@@ -260,19 +251,19 @@ class ESPHomeUpdateEntity(EsphomeEntity[UpdateInfo, UpdateState], UpdateEntity):
 
     @property
     @esphome_state_property
-    def release_summary(self) -> str:
+    def release_summary(self) -> str | None:
         """Return the release summary."""
         return self._state.release_summary
 
     @property
     @esphome_state_property
-    def release_url(self) -> str:
+    def release_url(self) -> str | None:
         """Return the release URL."""
         return self._state.release_url
 
     @property
     @esphome_state_property
-    def title(self) -> str:
+    def title(self) -> str | None:
         """Return the title of the update."""
         return self._state.title
 

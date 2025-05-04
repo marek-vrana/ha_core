@@ -2,8 +2,8 @@
   "config": {
     "step": {
       "user": {
-        "title": "Set up the Geofency webhook",
-        "description": "Are you sure you want to set up the Geofency webhook?"
+        "title": "Set up the Geofency Webhook",
+        "description": "Are you sure you want to set up the Geofency Webhook?"
       }
     },
     "abort": {

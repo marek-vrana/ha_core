@@ -24,7 +24,6 @@ from homeassistant.const import (
     CONF_METHOD,
     CONF_MODEL,
     CONF_NAME,
-    CONF_PIN,
     CONF_PORT,
     CONF_TOKEN,
 )
@@ -315,7 +314,7 @@ class SamsungTVConfigFlow(ConfigFlow, domain=DOMAIN):
 
         if user_input is not None:
             if (
-                (pin := user_input.get(CONF_PIN))
+                (pin := user_input.get("pin"))
                 and (token := await self._authenticator.try_pin(pin))
                 and (session_id := await self._authenticator.get_session_id_and_close())
             ):
@@ -334,7 +333,7 @@ class SamsungTVConfigFlow(ConfigFlow, domain=DOMAIN):
             step_id="encrypted_pairing",
             errors=errors,
             description_placeholders={"device": self._title},
-            data_schema=vol.Schema({vol.Required(CONF_PIN): str}),
+            data_schema=vol.Schema({vol.Required("pin"): str}),
         )
 
     @callback
@@ -597,7 +596,7 @@ class SamsungTVConfigFlow(ConfigFlow, domain=DOMAIN):
 
         if user_input is not None:
             if (
-                (pin := user_input.get(CONF_PIN))
+                (pin := user_input.get("pin"))
                 and (token := await self._authenticator.try_pin(pin))
                 and (session_id := await self._authenticator.get_session_id_and_close())
             ):
@@ -616,5 +615,5 @@ class SamsungTVConfigFlow(ConfigFlow, domain=DOMAIN):
             step_id="reauth_confirm_encrypted",
             errors=errors,
             description_placeholders={"device": self._title},
-            data_schema=vol.Schema({vol.Required(CONF_PIN): str}),
+            data_schema=vol.Schema({vol.Required("pin"): str}),
         )

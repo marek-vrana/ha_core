@@ -1,6 +1,7 @@
 """Tests for home_connect binary_sensor entities."""
 
 from collections.abc import Awaitable, Callable
+from http import HTTPStatus
 from unittest.mock import AsyncMock, MagicMock
 
 from aiohomeconnect.model import (
@@ -15,11 +16,17 @@ from aiohomeconnect.model import (
 from aiohomeconnect.model.error import HomeConnectApiError
 import pytest
 
+from homeassistant.components import automation, script
+from homeassistant.components.automation import automations_with_entity
 from homeassistant.components.home_connect.const import (
+    BSH_DOOR_STATE_CLOSED,
+    BSH_DOOR_STATE_LOCKED,
+    BSH_DOOR_STATE_OPEN,
     DOMAIN,
     REFRIGERATION_STATUS_DOOR_CLOSED,
     REFRIGERATION_STATUS_DOOR_OPEN,
 )
+from homeassistant.components.script import scripts_with_entity
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import (
     STATE_OFF,
@@ -30,8 +37,11 @@ from homeassistant.const import (
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr, entity_registry as er
+import homeassistant.helpers.issue_registry as ir
+from homeassistant.setup import async_setup_component
 
 from tests.common import MockConfigEntry
+from tests.typing import ClientSessionGenerator
 
 
 @pytest.fixture
@@ -40,15 +50,28 @@ def platforms() -> list[str]:
     return [Platform.BINARY_SENSOR]
 
 
-@pytest.mark.parametrize("appliance", ["Washer"], indirect=True)
-async def test_paired_depaired_devices_flow(
-    hass: HomeAssistant,
-    device_registry: dr.DeviceRegistry,
-    entity_registry: er.EntityRegistry,
-    client: MagicMock,
+async def test_binary_sensors(
     config_entry: MockConfigEntry,
     integration_setup: Callable[[MagicMock], Awaitable[bool]],
+    setup_credentials: None,
+    client: MagicMock,
+) -> None:
+    """Test binary sensor entities."""
+    assert config_entry.state == ConfigEntryState.NOT_LOADED
+    assert await integration_setup(client)
+    assert config_entry.state == ConfigEntryState.LOADED
+
+
+@pytest.mark.parametrize("appliance", ["Washer"], indirect=True)
+async def test_paired_depaired_devices_flow(
     appliance: HomeAppliance,
+    hass: HomeAssistant,
+    config_entry: MockConfigEntry,
+    integration_setup: Callable[[MagicMock], Awaitable[bool]],
+    setup_credentials: None,
+    client: MagicMock,
+    device_registry: dr.DeviceRegistry,
+    entity_registry: er.EntityRegistry,
 ) -> None:
     """Test that removed devices are correctly removed from and added to hass on API events."""
     assert config_entry.state == ConfigEntryState.NOT_LOADED
@@ -104,14 +127,15 @@ async def test_paired_depaired_devices_flow(
     indirect=["appliance"],
 )
 async def test_connected_devices(
-    hass: HomeAssistant,
-    device_registry: dr.DeviceRegistry,
-    entity_registry: er.EntityRegistry,
-    client: MagicMock,
-    config_entry: MockConfigEntry,
-    integration_setup: Callable[[MagicMock], Awaitable[bool]],
     appliance: HomeAppliance,
     keys_to_check: tuple,
+    hass: HomeAssistant,
+    config_entry: MockConfigEntry,
+    integration_setup: Callable[[MagicMock], Awaitable[bool]],
+    setup_credentials: None,
+    client: MagicMock,
+    device_registry: dr.DeviceRegistry,
+    entity_registry: er.EntityRegistry,
 ) -> None:
     """Test that devices reconnected.
 
@@ -170,13 +194,15 @@ async def test_connected_devices(
 @pytest.mark.parametrize("appliance", ["Washer"], indirect=True)
 async def test_binary_sensors_entity_availability(
     hass: HomeAssistant,
-    client: MagicMock,
     config_entry: MockConfigEntry,
     integration_setup: Callable[[MagicMock], Awaitable[bool]],
+    setup_credentials: None,
+    client: MagicMock,
     appliance: HomeAppliance,
 ) -> None:
     """Test if binary sensor entities availability are based on the appliance connection state."""
     entity_ids = [
+        "binary_sensor.washer_door",
         "binary_sensor.washer_remote_control",
     ]
     assert config_entry.state == ConfigEntryState.NOT_LOADED
@@ -217,6 +243,57 @@ async def test_binary_sensors_entity_availability(
         state = hass.states.get(entity_id)
         assert state
         assert state.state != STATE_UNAVAILABLE
+
+
+@pytest.mark.usefixtures("entity_registry_enabled_by_default")
+@pytest.mark.parametrize("appliance", ["Washer"], indirect=True)
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        (BSH_DOOR_STATE_CLOSED, "off"),
+        (BSH_DOOR_STATE_LOCKED, "off"),
+        (BSH_DOOR_STATE_OPEN, "on"),
+        ("", STATE_UNKNOWN),
+    ],
+)
+async def test_binary_sensors_door_states(
+    appliance: HomeAppliance,
+    expected: str,
+    value: str,
+    hass: HomeAssistant,
+    config_entry: MockConfigEntry,
+    integration_setup: Callable[[MagicMock], Awaitable[bool]],
+    setup_credentials: None,
+    client: MagicMock,
+) -> None:
+    """Tests for Appliance door states."""
+    entity_id = "binary_sensor.washer_door"
+    assert config_entry.state == ConfigEntryState.NOT_LOADED
+    assert await integration_setup(client)
+    assert config_entry.state == ConfigEntryState.LOADED
+
+    await client.add_events(
+        [
+            EventMessage(
+                appliance.ha_id,
+                EventType.STATUS,
+                ArrayOfEvents(
+                    [
+                        Event(
+                            key=EventKey.BSH_COMMON_STATUS_DOOR_STATE,
+                            raw_key=EventKey.BSH_COMMON_STATUS_DOOR_STATE.value,
+                            timestamp=0,
+                            level="",
+                            handling="",
+                            value=value,
+                        )
+                    ],
+                ),
+            )
+        ]
+    )
+    await hass.async_block_till_done()
+    assert hass.states.is_state(entity_id, expected)
 
 
 @pytest.mark.parametrize(
@@ -268,15 +345,16 @@ async def test_binary_sensors_entity_availability(
     indirect=["appliance"],
 )
 async def test_binary_sensors_functionality(
-    hass: HomeAssistant,
-    client: MagicMock,
-    config_entry: MockConfigEntry,
-    integration_setup: Callable[[MagicMock], Awaitable[bool]],
     entity_id: str,
     event_key: EventKey,
     event_value_update: str,
     appliance: HomeAppliance,
     expected: str,
+    hass: HomeAssistant,
+    config_entry: MockConfigEntry,
+    integration_setup: Callable[[MagicMock], Awaitable[bool]],
+    setup_credentials: None,
+    client: MagicMock,
 ) -> None:
     """Tests for Home Connect Fridge appliance door states."""
     assert config_entry.state == ConfigEntryState.NOT_LOADED
@@ -309,9 +387,10 @@ async def test_binary_sensors_functionality(
 @pytest.mark.parametrize("appliance", ["Washer"], indirect=True)
 async def test_connected_sensor_functionality(
     hass: HomeAssistant,
-    client: MagicMock,
     config_entry: MockConfigEntry,
     integration_setup: Callable[[MagicMock], Awaitable[bool]],
+    setup_credentials: None,
+    client: MagicMock,
     appliance: HomeAppliance,
 ) -> None:
     """Test if the connected binary sensor reports the right values."""
@@ -347,3 +426,141 @@ async def test_connected_sensor_functionality(
     await hass.async_block_till_done()
 
     assert hass.states.is_state(entity_id, STATE_ON)
+
+
+@pytest.mark.usefixtures("entity_registry_enabled_by_default")
+async def test_create_door_binary_sensor_deprecation_issue(
+    hass: HomeAssistant,
+    config_entry: MockConfigEntry,
+    integration_setup: Callable[[MagicMock], Awaitable[bool]],
+    setup_credentials: None,
+    client: MagicMock,
+    issue_registry: ir.IssueRegistry,
+) -> None:
+    """Test that we create an issue when an automation or script is using a door binary sensor entity."""
+    entity_id = "binary_sensor.washer_door"
+    issue_id = f"deprecated_binary_common_door_sensor_{entity_id}"
+
+    assert await async_setup_component(
+        hass,
+        automation.DOMAIN,
+        {
+            automation.DOMAIN: {
+                "alias": "test",
+                "trigger": {"platform": "state", "entity_id": entity_id},
+                "action": {
+                    "action": "automation.turn_on",
+                    "target": {
+                        "entity_id": "automation.test",
+                    },
+                },
+            }
+        },
+    )
+    assert await async_setup_component(
+        hass,
+        script.DOMAIN,
+        {
+            script.DOMAIN: {
+                "test": {
+                    "sequence": [
+                        {
+                            "condition": "state",
+                            "entity_id": entity_id,
+                            "state": "on",
+                        },
+                    ],
+                }
+            }
+        },
+    )
+
+    assert config_entry.state == ConfigEntryState.NOT_LOADED
+    assert await integration_setup(client)
+    assert config_entry.state == ConfigEntryState.LOADED
+
+    assert automations_with_entity(hass, entity_id)[0] == "automation.test"
+    assert scripts_with_entity(hass, entity_id)[0] == "script.test"
+
+    assert len(issue_registry.issues) == 1
+    assert issue_registry.async_get_issue(DOMAIN, issue_id)
+
+    await hass.config_entries.async_unload(config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    # Assert the issue is no longer present
+    assert not issue_registry.async_get_issue(DOMAIN, issue_id)
+    assert len(issue_registry.issues) == 0
+
+
+@pytest.mark.usefixtures("entity_registry_enabled_by_default")
+async def test_door_binary_sensor_deprecation_issue_fix(
+    hass: HomeAssistant,
+    config_entry: MockConfigEntry,
+    integration_setup: Callable[[MagicMock], Awaitable[bool]],
+    setup_credentials: None,
+    client: MagicMock,
+    issue_registry: ir.IssueRegistry,
+    hass_client: ClientSessionGenerator,
+) -> None:
+    """Test that we create an issue when an automation or script is using a door binary sensor entity."""
+    entity_id = "binary_sensor.washer_door"
+    issue_id = f"deprecated_binary_common_door_sensor_{entity_id}"
+
+    assert await async_setup_component(
+        hass,
+        automation.DOMAIN,
+        {
+            automation.DOMAIN: {
+                "alias": "test",
+                "trigger": {"platform": "state", "entity_id": entity_id},
+                "action": {
+                    "action": "automation.turn_on",
+                    "target": {
+                        "entity_id": "automation.test",
+                    },
+                },
+            }
+        },
+    )
+    assert await async_setup_component(
+        hass,
+        script.DOMAIN,
+        {
+            script.DOMAIN: {
+                "test": {
+                    "sequence": [
+                        {
+                            "condition": "state",
+                            "entity_id": entity_id,
+                            "state": "on",
+                        },
+                    ],
+                }
+            }
+        },
+    )
+
+    assert config_entry.state == ConfigEntryState.NOT_LOADED
+    assert await integration_setup(client)
+    assert config_entry.state == ConfigEntryState.LOADED
+
+    assert automations_with_entity(hass, entity_id)[0] == "automation.test"
+    assert scripts_with_entity(hass, entity_id)[0] == "script.test"
+
+    assert len(issue_registry.issues) == 1
+    issue = issue_registry.async_get_issue(DOMAIN, issue_id)
+    assert issue
+
+    _client = await hass_client()
+    resp = await _client.post(
+        "/api/repairs/issues/fix",
+        json={"handler": DOMAIN, "issue_id": issue.issue_id},
+    )
+    assert resp.status == HTTPStatus.OK
+    flow_id = (await resp.json())["flow_id"]
+    resp = await _client.post(f"/api/repairs/issues/fix/{flow_id}")
+
+    # Assert the issue is no longer present
+    assert not issue_registry.async_get_issue(DOMAIN, issue_id)
+    assert len(issue_registry.issues) == 0

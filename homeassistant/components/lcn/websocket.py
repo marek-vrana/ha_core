@@ -19,6 +19,7 @@ from homeassistant.const import (
     CONF_DOMAIN,
     CONF_ENTITIES,
     CONF_NAME,
+    CONF_RESOURCE,
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import (
@@ -342,6 +343,7 @@ async def websocket_add_entity(
     entity_config = {
         CONF_ADDRESS: msg[CONF_ADDRESS],
         CONF_NAME: msg[CONF_NAME],
+        CONF_RESOURCE: resource,
         CONF_DOMAIN: domain_name,
         CONF_DOMAIN_DATA: domain_data,
     }
@@ -369,15 +371,7 @@ async def websocket_add_entity(
         vol.Required("entry_id"): cv.string,
         vol.Required(CONF_ADDRESS): ADDRESS_SCHEMA,
         vol.Required(CONF_DOMAIN): cv.string,
-        vol.Required(CONF_DOMAIN_DATA): vol.Any(
-            DOMAIN_DATA_BINARY_SENSOR,
-            DOMAIN_DATA_SENSOR,
-            DOMAIN_DATA_SWITCH,
-            DOMAIN_DATA_LIGHT,
-            DOMAIN_DATA_CLIMATE,
-            DOMAIN_DATA_COVER,
-            DOMAIN_DATA_SCENE,
-        ),
+        vol.Required(CONF_RESOURCE): cv.string,
     }
 )
 @websocket_api.async_response
@@ -396,10 +390,7 @@ async def websocket_delete_entity(
             if (
                 tuple(entity_config[CONF_ADDRESS]) == msg[CONF_ADDRESS]
                 and entity_config[CONF_DOMAIN] == msg[CONF_DOMAIN]
-                and get_resource(
-                    entity_config[CONF_DOMAIN], entity_config[CONF_DOMAIN_DATA]
-                )
-                == get_resource(msg[CONF_DOMAIN], msg[CONF_DOMAIN_DATA])
+                and entity_config[CONF_RESOURCE] == msg[CONF_RESOURCE]
             )
         ),
         None,

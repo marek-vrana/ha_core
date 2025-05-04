@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from types import MappingProxyType
 from typing import Any
 
 from motioneye_client.client import MotionEyeClient
@@ -103,7 +103,7 @@ class MotionEyeSwitch(MotionEyeEntity, SwitchEntity):
         camera: dict[str, Any],
         client: MotionEyeClient,
         coordinator: DataUpdateCoordinator,
-        options: Mapping[str, str],
+        options: MappingProxyType[str, str],
         entity_description: SwitchEntityDescription,
     ) -> None:
         """Initialize the switch."""

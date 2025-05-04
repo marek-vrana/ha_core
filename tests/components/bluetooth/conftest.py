@@ -23,7 +23,8 @@ from . import (
 @pytest.fixture(name="disable_bluez_manager_socket", autouse=True, scope="package")
 def disable_bluez_manager_socket():
     """Mock the bluez manager socket."""
-    bleak_manager.get_global_bluez_manager_with_timeout._has_dbus_socket = False
+    with patch.object(bleak_manager, "get_global_bluez_manager_with_timeout"):
+        yield
 
 
 @pytest.fixture(name="disable_dbus_socket", autouse=True, scope="package")

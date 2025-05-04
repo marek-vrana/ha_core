@@ -23,7 +23,7 @@
       "state": {
         "cleaning": "Cleaning",
         "docked": "Docked",
-        "error": "[%key:common::state::error%]",
+        "error": "Error",
         "idle": "[%key:common::state::idle%]",
         "off": "[%key:common::state::off%]",
         "on": "[%key:common::state::on%]",

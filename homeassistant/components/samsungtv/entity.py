@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 from wakeonlan import send_magic_packet
 
 from homeassistant.const import (
@@ -84,12 +82,12 @@ class SamsungTVEntity(CoordinatorEntity[SamsungTVDataUpdateCoordinator], Entity)
         # broadcast a packet as well
         send_magic_packet(self._mac)
 
-    async def async_turn_off(self, **kwargs: Any) -> None:
+    async def _async_turn_off(self) -> None:
         """Turn the device off."""
         await self._bridge.async_power_off()
         await self.coordinator.async_refresh()
 
-    async def async_turn_on(self, **kwargs: Any) -> None:
+    async def _async_turn_on(self) -> None:
         """Turn the remote on."""
         if self._turn_on_action:
             LOGGER.debug("Attempting to turn on %s via automation", self.entity_id)

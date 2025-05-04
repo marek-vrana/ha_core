@@ -30,8 +30,6 @@ from .entity import (
 )
 from .enum_mapper import EsphomeEnumMapper
 
-PARALLEL_UPDATES = 0
-
 ORDERED_NAMED_FAN_SPEEDS = [FanSpeed.LOW, FanSpeed.MEDIUM, FanSpeed.HIGH]
 
 
@@ -106,7 +104,7 @@ class EsphomeFan(EsphomeEntity[FanInfo, FanState], FanEntity):
 
     @property
     @esphome_state_property
-    def is_on(self) -> bool:
+    def is_on(self) -> bool | None:
         """Return true if the entity is on."""
         return self._state.state
 
@@ -126,7 +124,7 @@ class EsphomeFan(EsphomeEntity[FanInfo, FanState], FanEntity):
 
     @property
     @esphome_state_property
-    def oscillating(self) -> bool:
+    def oscillating(self) -> bool | None:
         """Return the oscillation state."""
         return self._state.oscillating
 
@@ -138,7 +136,7 @@ class EsphomeFan(EsphomeEntity[FanInfo, FanState], FanEntity):
 
     @property
     @esphome_state_property
-    def preset_mode(self) -> str:
+    def preset_mode(self) -> str | None:
         """Return the current fan preset mode."""
         return self._state.preset_mode
 

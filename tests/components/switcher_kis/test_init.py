@@ -2,7 +2,6 @@
 
 from datetime import timedelta
 
-from freezegun.api import FrozenDateTimeFactory
 import pytest
 
 from homeassistant.components.switcher_kis.const import DOMAIN, MAX_UPDATE_INTERVAL_SEC
@@ -21,10 +20,7 @@ from tests.typing import WebSocketGenerator
 
 
 async def test_update_fail(
-    hass: HomeAssistant,
-    mock_bridge,
-    caplog: pytest.LogCaptureFixture,
-    freezer: FrozenDateTimeFactory,
+    hass: HomeAssistant, mock_bridge, caplog: pytest.LogCaptureFixture
 ) -> None:
     """Test entities state unavailable when updates fail.."""
     entry = await init_integration(hass)
@@ -36,8 +32,9 @@ async def test_update_fail(
     assert mock_bridge.is_running is True
     assert len(entry.runtime_data) == 2
 
-    freezer.tick(timedelta(seconds=MAX_UPDATE_INTERVAL_SEC + 1))
-    async_fire_time_changed(hass)
+    async_fire_time_changed(
+        hass, dt_util.utcnow() + timedelta(seconds=MAX_UPDATE_INTERVAL_SEC + 1)
+    )
     await hass.async_block_till_done()
 
     for device in DUMMY_SWITCHER_DEVICES:
@@ -87,10 +84,7 @@ async def test_entry_unload(hass: HomeAssistant, mock_bridge) -> None:
 
 
 async def test_remove_device(
-    hass: HomeAssistant,
-    mock_bridge,
-    hass_ws_client: WebSocketGenerator,
-    device_registry: dr.DeviceRegistry,
+    hass: HomeAssistant, mock_bridge, hass_ws_client: WebSocketGenerator
 ) -> None:
     """Test being able to remove a disconnected device."""
     assert await async_setup_component(hass, "config", {})
@@ -104,6 +98,7 @@ async def test_remove_device(
     assert mock_bridge.is_running is True
     assert len(entry.runtime_data) == 2
 
+    device_registry = dr.async_get(hass)
     live_device_id = DUMMY_DEVICE_ID1
     dead_device_id = DUMMY_DEVICE_ID4
 

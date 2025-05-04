@@ -176,13 +176,14 @@ SERVICES_SET_PROGRAM_AND_OPTIONS = [
     SERVICE_KV_CALL_PARAMS + SERVICE_COMMAND_CALL_PARAMS + SERVICE_PROGRAM_CALL_PARAMS,
 )
 async def test_key_value_services(
+    service_call: dict[str, Any],
     hass: HomeAssistant,
     device_registry: dr.DeviceRegistry,
-    client: MagicMock,
     config_entry: MockConfigEntry,
     integration_setup: Callable[[MagicMock], Awaitable[bool]],
+    setup_credentials: None,
+    client: MagicMock,
     appliance: HomeAppliance,
-    service_call: dict[str, Any],
 ) -> None:
     """Create and test services."""
     assert config_entry.state == ConfigEntryState.NOT_LOADED
@@ -224,16 +225,17 @@ async def test_key_value_services(
     ],
 )
 async def test_programs_and_options_actions_deprecation(
-    hass: HomeAssistant,
-    hass_client: ClientSessionGenerator,
-    device_registry: dr.DeviceRegistry,
-    issue_registry: ir.IssueRegistry,
-    client: MagicMock,
-    config_entry: MockConfigEntry,
-    integration_setup: Callable[[MagicMock], Awaitable[bool]],
-    appliance: HomeAppliance,
     service_call: dict[str, Any],
     issue_id: str,
+    hass: HomeAssistant,
+    device_registry: dr.DeviceRegistry,
+    config_entry: MockConfigEntry,
+    integration_setup: Callable[[MagicMock], Awaitable[bool]],
+    setup_credentials: None,
+    client: MagicMock,
+    appliance: HomeAppliance,
+    issue_registry: ir.IssueRegistry,
+    hass_client: ClientSessionGenerator,
 ) -> None:
     """Test deprecated service keys."""
     assert config_entry.state == ConfigEntryState.NOT_LOADED
@@ -294,14 +296,15 @@ async def test_programs_and_options_actions_deprecation(
     ),
 )
 async def test_set_program_and_options(
-    hass: HomeAssistant,
-    device_registry: dr.DeviceRegistry,
-    client: MagicMock,
-    config_entry: MockConfigEntry,
-    integration_setup: Callable[[MagicMock], Awaitable[bool]],
-    appliance: HomeAppliance,
     service_call: dict[str, Any],
     called_method: str,
+    hass: HomeAssistant,
+    device_registry: dr.DeviceRegistry,
+    config_entry: MockConfigEntry,
+    integration_setup: Callable[[MagicMock], Awaitable[bool]],
+    setup_credentials: None,
+    client: MagicMock,
+    appliance: HomeAppliance,
     snapshot: SnapshotAssertion,
 ) -> None:
     """Test recognized options."""
@@ -337,14 +340,15 @@ async def test_set_program_and_options(
     ),
 )
 async def test_set_program_and_options_exceptions(
-    hass: HomeAssistant,
-    device_registry: dr.DeviceRegistry,
-    client_with_exception: MagicMock,
-    config_entry: MockConfigEntry,
-    integration_setup: Callable[[MagicMock], Awaitable[bool]],
-    appliance: HomeAppliance,
     service_call: dict[str, Any],
     error_regex: str,
+    hass: HomeAssistant,
+    device_registry: dr.DeviceRegistry,
+    config_entry: MockConfigEntry,
+    integration_setup: Callable[[MagicMock], Awaitable[bool]],
+    setup_credentials: None,
+    client_with_exception: MagicMock,
+    appliance: HomeAppliance,
 ) -> None:
     """Test recognized options."""
     assert config_entry.state == ConfigEntryState.NOT_LOADED
@@ -367,13 +371,14 @@ async def test_set_program_and_options_exceptions(
     SERVICE_KV_CALL_PARAMS + SERVICE_COMMAND_CALL_PARAMS + SERVICE_PROGRAM_CALL_PARAMS,
 )
 async def test_services_exception_device_id(
+    service_call: dict[str, Any],
     hass: HomeAssistant,
-    device_registry: dr.DeviceRegistry,
-    client_with_exception: MagicMock,
     config_entry: MockConfigEntry,
     integration_setup: Callable[[MagicMock], Awaitable[bool]],
+    setup_credentials: None,
+    client_with_exception: MagicMock,
     appliance: HomeAppliance,
-    service_call: dict[str, Any],
+    device_registry: dr.DeviceRegistry,
 ) -> None:
     """Raise a HomeAssistantError when there is an API error."""
     assert config_entry.state == ConfigEntryState.NOT_LOADED
@@ -393,10 +398,11 @@ async def test_services_exception_device_id(
 
 async def test_services_appliance_not_found(
     hass: HomeAssistant,
-    device_registry: dr.DeviceRegistry,
-    client: MagicMock,
     config_entry: MockConfigEntry,
     integration_setup: Callable[[MagicMock], Awaitable[bool]],
+    setup_credentials: None,
+    client: MagicMock,
+    device_registry: dr.DeviceRegistry,
 ) -> None:
     """Raise a ServiceValidationError when device id does not match."""
     assert config_entry.state == ConfigEntryState.NOT_LOADED
@@ -439,13 +445,14 @@ async def test_services_appliance_not_found(
     SERVICE_KV_CALL_PARAMS + SERVICE_COMMAND_CALL_PARAMS + SERVICE_PROGRAM_CALL_PARAMS,
 )
 async def test_services_exception(
+    service_call: dict[str, Any],
     hass: HomeAssistant,
-    device_registry: dr.DeviceRegistry,
-    client_with_exception: MagicMock,
     config_entry: MockConfigEntry,
     integration_setup: Callable[[MagicMock], Awaitable[bool]],
+    setup_credentials: None,
+    client_with_exception: MagicMock,
     appliance: HomeAppliance,
-    service_call: dict[str, Any],
+    device_registry: dr.DeviceRegistry,
 ) -> None:
     """Raise a ValueError when device id does not match."""
     assert config_entry.state == ConfigEntryState.NOT_LOADED

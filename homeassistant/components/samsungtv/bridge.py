@@ -150,7 +150,7 @@ class SamsungTVBridge(ABC):
     ) -> SamsungTVBridge:
         """Get Bridge instance."""
         if method == METHOD_LEGACY or port == LEGACY_PORT:
-            return SamsungTVLegacyBridge(hass, method, host, port or LEGACY_PORT)
+            return SamsungTVLegacyBridge(hass, method, host, port)
         if method == METHOD_ENCRYPTED_WEBSOCKET or port == ENCRYPTED_WEBSOCKET_PORT:
             return SamsungTVEncryptedBridge(hass, method, host, port, entry_data)
         return SamsungTVWSBridge(hass, method, host, port, entry_data)
@@ -262,14 +262,14 @@ class SamsungTVLegacyBridge(SamsungTVBridge):
         self, hass: HomeAssistant, method: str, host: str, port: int | None
     ) -> None:
         """Initialize Bridge."""
-        super().__init__(hass, method, host, port)
+        super().__init__(hass, method, host, LEGACY_PORT)
         self.config = {
             CONF_NAME: VALUE_CONF_NAME,
             CONF_DESCRIPTION: VALUE_CONF_NAME,
             CONF_ID: VALUE_CONF_ID,
             CONF_HOST: host,
             CONF_METHOD: method,
-            CONF_PORT: port,
+            CONF_PORT: None,
             CONF_TIMEOUT: 1,
         }
         self._remote: Remote | None = None
@@ -301,7 +301,7 @@ class SamsungTVLegacyBridge(SamsungTVBridge):
             CONF_ID: VALUE_CONF_ID,
             CONF_HOST: self.host,
             CONF_METHOD: self.method,
-            CONF_PORT: self.port,
+            CONF_PORT: None,
             # We need this high timeout because waiting for auth popup
             # is just an open socket
             CONF_TIMEOUT: TIMEOUT_REQUEST,
@@ -510,7 +510,6 @@ class SamsungTVWSBridge(
 
     async def async_try_connect(self) -> str:
         """Try to connect to the Websocket TV."""
-        temp_result = None
         for self.port in WEBSOCKET_PORTS:
             config = {
                 CONF_NAME: VALUE_CONF_NAME,
@@ -522,6 +521,7 @@ class SamsungTVWSBridge(
                 CONF_TIMEOUT: TIMEOUT_REQUEST,
             }
 
+            result = None
             try:
                 LOGGER.debug("Try config: %s", config)
                 async with SamsungTVWSAsyncRemote(
@@ -545,43 +545,38 @@ class SamsungTVWSBridge(
                     config,
                     err,
                 )
-                temp_result = RESULT_NOT_SUPPORTED
+                result = RESULT_NOT_SUPPORTED
             except WebSocketException as err:
                 LOGGER.debug(
                     "Working but unsupported config: %s, error: %s", config, err
                 )
-                temp_result = RESULT_NOT_SUPPORTED
+                result = RESULT_NOT_SUPPORTED
             except UnauthorizedError as err:
                 LOGGER.debug("Failing config: %s, %s error: %s", config, type(err), err)
                 return RESULT_AUTH_MISSING
             except (ConnectionFailure, OSError, AsyncioTimeoutError) as err:
                 LOGGER.debug("Failing config: %s, %s error: %s", config, type(err), err)
+        else:  # noqa: PLW0120
+            if result:
+                return result
 
-        return temp_result or RESULT_CANNOT_CONNECT
+        return RESULT_CANNOT_CONNECT
 
     async def async_device_info(self, force: bool = False) -> dict[str, Any] | None:
         """Try to gather infos of this TV."""
         if self._rest_api is None:
             assert self.port
-            self._rest_api = SamsungTVAsyncRest(
+            rest_api = SamsungTVAsyncRest(
                 host=self.host,
                 session=async_get_clientsession(self.hass),
                 port=self.port,
                 timeout=TIMEOUT_WEBSOCKET,
             )
 
-        try:
-            device_info: dict[str, Any] = await self._rest_api.rest_device_info()
+        with contextlib.suppress(*REST_EXCEPTIONS):
+            device_info: dict[str, Any] = await rest_api.rest_device_info()
             LOGGER.debug("Device info on %s is: %s", self.host, device_info)
             self._device_info = device_info
-        except REST_EXCEPTIONS as err:
-            LOGGER.debug(
-                "Failed to load device info from %s:%s: %s",
-                self.host,
-                self.port,
-                str(err),
-            )
-        else:
             return device_info
 
         return None if force else self._device_info

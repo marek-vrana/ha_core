@@ -42,7 +42,6 @@ from tests.typing import ClientSessionGenerator
 DEFAULT_LANG = "en_US"
 SUPPORT_LANGUAGES = ["de_CH", "de_DE", "en_GB", "en_US"]
 TEST_DOMAIN = "test"
-MOCK_DATA = b"123"
 
 
 def mock_tts_get_cache_files_fixture_helper() -> Generator[MagicMock]:
@@ -165,7 +164,7 @@ class BaseProvider:
         self, message: str, language: str, options: dict[str, Any]
     ) -> TtsAudioType:
         """Load TTS dat."""
-        return ("mp3", MOCK_DATA)
+        return ("mp3", b"")
 
 
 class MockTTSProvider(BaseProvider, Provider):

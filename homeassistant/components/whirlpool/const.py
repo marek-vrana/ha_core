@@ -5,12 +5,12 @@ from whirlpool.backendselector import Brand, Region
 DOMAIN = "whirlpool"
 CONF_BRAND = "brand"
 
-REGIONS_CONF_MAP = {
+CONF_REGIONS_MAP = {
     "EU": Region.EU,
     "US": Region.US,
 }
 
-BRANDS_CONF_MAP = {
+CONF_BRANDS_MAP = {
     "Whirlpool": Brand.Whirlpool,
     "Maytag": Brand.Maytag,
     "KitchenAid": Brand.KitchenAid,

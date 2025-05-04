@@ -2,7 +2,6 @@
 
 DOMAIN = "jewish_calendar"
 
-ATTR_AFTER_SUNSET = "after_sunset"
 ATTR_DATE = "date"
 ATTR_NUSACH = "nusach"
 
@@ -14,6 +13,6 @@ DEFAULT_NAME = "Jewish Calendar"
 DEFAULT_CANDLE_LIGHT = 18
 DEFAULT_DIASPORA = False
 DEFAULT_HAVDALAH_OFFSET_MINUTES = 0
-DEFAULT_LANGUAGE = "en"
+DEFAULT_LANGUAGE = "english"
 
 SERVICE_COUNT_OMER = "count_omer"

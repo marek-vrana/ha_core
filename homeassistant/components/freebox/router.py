@@ -72,11 +72,7 @@ async def get_hosts_list_if_supported(
     supports_hosts: bool = True
     fbx_devices: list[dict[str, Any]] = []
     try:
-        fbx_interfaces = await fbx_api.lan.get_interfaces() or []
-        for interface in fbx_interfaces:
-            fbx_devices.extend(
-                await fbx_api.lan.get_hosts_list(interface["name"]) or []
-            )
+        fbx_devices = await fbx_api.lan.get_hosts_list() or []
     except HttpRequestError as err:
         if (
             (matcher := re.search(r"Request failed \(APIResponse: (.+)\)", str(err)))

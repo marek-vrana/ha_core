@@ -12,13 +12,11 @@ from homeassistant.components.time import (
 from homeassistant.const import ATTR_ENTITY_ID, STATE_UNKNOWN
 from homeassistant.core import HomeAssistant
 
-from .conftest import MockGenericDeviceEntryType
-
 
 async def test_generic_time_entity(
     hass: HomeAssistant,
     mock_client: APIClient,
-    mock_generic_device_entry: MockGenericDeviceEntryType,
+    mock_generic_device_entry,
 ) -> None:
     """Test a generic time entity."""
     entity_info = [
@@ -54,7 +52,7 @@ async def test_generic_time_entity(
 async def test_generic_time_missing_state(
     hass: HomeAssistant,
     mock_client: APIClient,
-    mock_generic_device_entry: MockGenericDeviceEntryType,
+    mock_generic_device_entry,
 ) -> None:
     """Test a generic time entity with missing state."""
     entity_info = [

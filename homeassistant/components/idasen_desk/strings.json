@@ -26,10 +26,10 @@
   "entity": {
     "button": {
       "connect": {
-        "name": "[%key:common::action::connect%]"
+        "name": "Connect"
       },
       "disconnect": {
-        "name": "[%key:common::action::disconnect%]"
+        "name": "Disconnect"
       }
     },
     "sensor": {

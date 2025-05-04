@@ -99,7 +99,6 @@ SENSOR_ADVANCED_SETTINGS = [
         native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
         value_fn=lambda client: client.power.ct_amps,
         is_supported_fn=lambda client: client.ct_connected,
-        entity_registry_enabled_default=False,
     ),
 ]
 

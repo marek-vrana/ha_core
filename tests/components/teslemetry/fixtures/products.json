@@ -67,7 +67,7 @@
         "webcam_supported": true,
         "wheel_type": "Pinwheel18CapKit"
       },
-      "command_signing": "off",
+      "command_signing": "allowed",
       "release_notes_supported": true
     },
     {

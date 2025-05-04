@@ -12,13 +12,11 @@ from homeassistant.components.text import (
 from homeassistant.const import ATTR_ENTITY_ID, STATE_UNKNOWN
 from homeassistant.core import HomeAssistant
 
-from .conftest import MockGenericDeviceEntryType
-
 
 async def test_generic_text_entity(
     hass: HomeAssistant,
     mock_client: APIClient,
-    mock_generic_device_entry: MockGenericDeviceEntryType,
+    mock_generic_device_entry,
 ) -> None:
     """Test a generic text entity."""
     entity_info = [
@@ -58,7 +56,7 @@ async def test_generic_text_entity(
 async def test_generic_text_entity_no_state(
     hass: HomeAssistant,
     mock_client: APIClient,
-    mock_generic_device_entry: MockGenericDeviceEntryType,
+    mock_generic_device_entry,
 ) -> None:
     """Test a generic text entity that has no state."""
     entity_info = [
@@ -89,7 +87,7 @@ async def test_generic_text_entity_no_state(
 async def test_generic_text_entity_missing_state(
     hass: HomeAssistant,
     mock_client: APIClient,
-    mock_generic_device_entry: MockGenericDeviceEntryType,
+    mock_generic_device_entry,
 ) -> None:
     """Test a generic text entity that has no state."""
     entity_info = [

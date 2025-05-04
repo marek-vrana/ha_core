@@ -12,13 +12,9 @@ from homeassistant.components.switch import (
 from homeassistant.const import ATTR_ENTITY_ID, STATE_ON
 from homeassistant.core import HomeAssistant
 
-from .conftest import MockGenericDeviceEntryType
-
 
 async def test_switch_generic_entity(
-    hass: HomeAssistant,
-    mock_client: APIClient,
-    mock_generic_device_entry: MockGenericDeviceEntryType,
+    hass: HomeAssistant, mock_client: APIClient, mock_generic_device_entry
 ) -> None:
     """Test a generic switch entity."""
     entity_info = [

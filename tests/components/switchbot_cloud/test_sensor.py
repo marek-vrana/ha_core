@@ -26,7 +26,6 @@ async def test_meter(
 
     mock_list_devices.return_value = [
         Device(
-            version="V1.0",
             deviceId="meter-id-1",
             deviceName="meter-1",
             deviceType="Meter",
@@ -51,7 +50,6 @@ async def test_meter_no_coordinator_data(
     """Test meter sensors are unknown without coordinator data."""
     mock_list_devices.return_value = [
         Device(
-            version="V1.0",
             deviceId="meter-id-1",
             deviceName="meter-1",
             deviceType="Meter",

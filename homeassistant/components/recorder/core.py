@@ -1307,17 +1307,11 @@ class Recorder(threading.Thread):
 
     async def async_block_till_done(self) -> None:
         """Async version of block_till_done."""
-        if future := self.async_get_commit_future():
-            await future
-
-    @callback
-    def async_get_commit_future(self) -> asyncio.Future[None] | None:
-        """Return a future that will wait for the next commit or None if nothing pending."""
         if self._queue.empty() and not self._event_session_has_pending_writes:
-            return None
-        future: asyncio.Future[None] = self.hass.loop.create_future()
-        self.queue_task(SynchronizeTask(future))
-        return future
+            return
+        event = asyncio.Event()
+        self.queue_task(SynchronizeTask(event))
+        await event.wait()
 
     def block_till_done(self) -> None:
         """Block till all events processed.

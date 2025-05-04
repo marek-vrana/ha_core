@@ -45,7 +45,6 @@ from homeassistant.helpers.trigger_template_entity import (
     CONF_AVAILABILITY,
     CONF_PICTURE,
     ManualTriggerSensorEntity,
-    ValueTemplate,
 )
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 
@@ -80,7 +79,7 @@ async def async_setup_platform(
 
     name: Template = conf[CONF_NAME]
     query_str: str = conf[CONF_QUERY]
-    value_template: ValueTemplate | None = conf.get(CONF_VALUE_TEMPLATE)
+    value_template: Template | None = conf.get(CONF_VALUE_TEMPLATE)
     column_name: str = conf[CONF_COLUMN_NAME]
     unique_id: str | None = conf.get(CONF_UNIQUE_ID)
     db_url: str = resolve_db_url(hass, conf.get(CONF_DB_URL))
@@ -117,10 +116,10 @@ async def async_setup_entry(
     template: str | None = entry.options.get(CONF_VALUE_TEMPLATE)
     column_name: str = entry.options[CONF_COLUMN_NAME]
 
-    value_template: ValueTemplate | None = None
+    value_template: Template | None = None
     if template is not None:
         try:
-            value_template = ValueTemplate(template, hass)
+            value_template = Template(template, hass)
             value_template.ensure_valid()
         except TemplateError:
             value_template = None
@@ -180,7 +179,7 @@ async def async_setup_sensor(
     trigger_entity_config: ConfigType,
     query_str: str,
     column_name: str,
-    value_template: ValueTemplate | None,
+    value_template: Template | None,
     unique_id: str | None,
     db_url: str,
     yaml: bool,
@@ -317,7 +316,7 @@ class SQLSensor(ManualTriggerSensorEntity):
         sessmaker: scoped_session,
         query: str,
         column: str,
-        value_template: ValueTemplate | None,
+        value_template: Template | None,
         yaml: bool,
         use_database_executor: bool,
     ) -> None:
@@ -360,14 +359,14 @@ class SQLSensor(ManualTriggerSensorEntity):
     async def async_update(self) -> None:
         """Retrieve sensor data from the query using the right executor."""
         if self._use_database_executor:
-            await get_instance(self.hass).async_add_executor_job(self._update)
+            data = await get_instance(self.hass).async_add_executor_job(self._update)
         else:
-            await self.hass.async_add_executor_job(self._update)
+            data = await self.hass.async_add_executor_job(self._update)
+        self._process_manual_data(data)
 
-    def _update(self) -> None:
+    def _update(self) -> Any:
         """Retrieve sensor data from the query."""
         data = None
-        extra_state_attributes = {}
         self._attr_extra_state_attributes = {}
         sess: scoped_session = self.sessionmaker()
         try:
@@ -380,7 +379,7 @@ class SQLSensor(ManualTriggerSensorEntity):
             )
             sess.rollback()
             sess.close()
-            return
+            return None
 
         for res in result.mappings():
             _LOGGER.debug("Query %s result in %s", self._query, res.items())
@@ -392,19 +391,15 @@ class SQLSensor(ManualTriggerSensorEntity):
                     value = value.isoformat()
                 elif isinstance(value, (bytes, bytearray)):
                     value = f"0x{value.hex()}"
-                extra_state_attributes[key] = value
                 self._attr_extra_state_attributes[key] = value
 
         if data is not None and isinstance(data, (bytes, bytearray)):
             data = f"0x{data.hex()}"
 
         if data is not None and self._template is not None:
-            variables = self._template_variables_with_value(data)
-            if self._render_availability_template(variables):
-                self._attr_native_value = self._template.async_render_as_value_template(
-                    self.entity_id, variables, None
-                )
-                self._process_manual_data(variables)
+            self._attr_native_value = (
+                self._template.async_render_with_possible_json_value(data, None)
+            )
         else:
             self._attr_native_value = data
 
@@ -412,3 +407,4 @@ class SQLSensor(ManualTriggerSensorEntity):
             _LOGGER.warning("%s returned no results", self._query)
 
         sess.close()
+        return data

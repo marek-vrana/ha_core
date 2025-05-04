@@ -283,12 +283,6 @@
         "yellow": "Yellow",
         "yellowgreen": "Yellow green"
       }
-    },
-    "flash": {
-      "options": {
-        "short": "Short",
-        "long": "Long"
-      }
     }
   },
   "services": {

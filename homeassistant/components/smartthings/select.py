@@ -7,7 +7,6 @@ from dataclasses import dataclass
 from pysmartthings import Attribute, Capability, Command, SmartThings
 
 from homeassistant.components.select import SelectEntity, SelectEntityDescription
-from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
@@ -22,7 +21,7 @@ class SmartThingsSelectDescription(SelectEntityDescription):
     """Class describing SmartThings select entities."""
 
     key: Capability
-    requires_remote_control_status: bool = False
+    requires_remote_control_status: bool
     options_attribute: Attribute
     status_attribute: Attribute
     command: Command
@@ -55,22 +54,6 @@ CAPABILITIES_TO_SELECT: dict[Capability | str, SmartThingsSelectDescription] = {
         options_attribute=Attribute.SUPPORTED_MACHINE_STATES,
         status_attribute=Attribute.MACHINE_STATE,
         command=Command.SET_MACHINE_STATE,
-    ),
-    Capability.SAMSUNG_CE_AUTO_DISPENSE_DETERGENT: SmartThingsSelectDescription(
-        key=Capability.SAMSUNG_CE_AUTO_DISPENSE_DETERGENT,
-        translation_key="detergent_amount",
-        options_attribute=Attribute.SUPPORTED_AMOUNT,
-        status_attribute=Attribute.AMOUNT,
-        command=Command.SET_AMOUNT,
-        entity_category=EntityCategory.CONFIG,
-    ),
-    Capability.SAMSUNG_CE_FLEXIBLE_AUTO_DISPENSE_DETERGENT: SmartThingsSelectDescription(
-        key=Capability.SAMSUNG_CE_FLEXIBLE_AUTO_DISPENSE_DETERGENT,
-        translation_key="flexible_detergent_amount",
-        options_attribute=Attribute.SUPPORTED_AMOUNT,
-        status_attribute=Attribute.AMOUNT,
-        command=Command.SET_AMOUNT,
-        entity_category=EntityCategory.CONFIG,
     ),
 }
 

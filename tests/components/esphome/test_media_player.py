@@ -1,9 +1,12 @@
 """Test ESPHome media_players."""
 
+from collections.abc import Awaitable, Callable
 from unittest.mock import AsyncMock, Mock, call, patch
 
 from aioesphomeapi import (
     APIClient,
+    EntityInfo,
+    EntityState,
     MediaPlayerCommand,
     MediaPlayerEntityState,
     MediaPlayerFormatPurpose,
@@ -38,16 +41,14 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
 from homeassistant.setup import async_setup_component
 
-from .conftest import MockESPHomeDeviceType, MockGenericDeviceEntryType
+from .conftest import MockESPHomeDevice
 
 from tests.common import mock_platform
 from tests.typing import WebSocketGenerator
 
 
 async def test_media_player_entity(
-    hass: HomeAssistant,
-    mock_client: APIClient,
-    mock_generic_device_entry: MockGenericDeviceEntryType,
+    hass: HomeAssistant, mock_client: APIClient, mock_generic_device_entry
 ) -> None:
     """Test a generic media_player entity."""
     entity_info = [
@@ -159,7 +160,7 @@ async def test_media_player_entity_with_source(
     hass: HomeAssistant,
     mock_client: APIClient,
     hass_ws_client: WebSocketGenerator,
-    mock_generic_device_entry: MockGenericDeviceEntryType,
+    mock_generic_device_entry,
 ) -> None:
     """Test a generic media_player entity media source."""
     await async_setup_component(hass, "media_source", {"media_source": {}})
@@ -292,10 +293,13 @@ async def test_media_player_proxy(
     hass: HomeAssistant,
     device_registry: dr.DeviceRegistry,
     mock_client: APIClient,
-    mock_esphome_device: MockESPHomeDeviceType,
+    mock_esphome_device: Callable[
+        [APIClient, list[EntityInfo], list[UserService], list[EntityState]],
+        Awaitable[MockESPHomeDevice],
+    ],
 ) -> None:
     """Test a media_player entity with a proxy URL."""
-    mock_device = await mock_esphome_device(
+    mock_device: MockESPHomeDevice = await mock_esphome_device(
         mock_client=mock_client,
         entity_info=[
             MediaPlayerInfo(

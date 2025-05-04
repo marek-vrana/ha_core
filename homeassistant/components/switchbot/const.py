@@ -35,9 +35,6 @@ class SupportedModels(StrEnum):
     RELAY_SWITCH_1 = "relay_switch_1"
     LEAK = "leak"
     REMOTE = "remote"
-    ROLLER_SHADE = "roller_shade"
-    HUBMINI_MATTER = "hubmini_matter"
-    CIRCULATOR_FAN = "circulator_fan"
 
 
 CONNECTABLE_SUPPORTED_MODEL_TYPES = {
@@ -54,8 +51,6 @@ CONNECTABLE_SUPPORTED_MODEL_TYPES = {
     SwitchbotModel.HUB2: SupportedModels.HUB2,
     SwitchbotModel.RELAY_SWITCH_1PM: SupportedModels.RELAY_SWITCH_1PM,
     SwitchbotModel.RELAY_SWITCH_1: SupportedModels.RELAY_SWITCH_1,
-    SwitchbotModel.ROLLER_SHADE: SupportedModels.ROLLER_SHADE,
-    SwitchbotModel.CIRCULATOR_FAN: SupportedModels.CIRCULATOR_FAN,
 }
 
 NON_CONNECTABLE_SUPPORTED_MODEL_TYPES = {
@@ -67,7 +62,6 @@ NON_CONNECTABLE_SUPPORTED_MODEL_TYPES = {
     SwitchbotModel.MOTION_SENSOR: SupportedModels.MOTION,
     SwitchbotModel.LEAK: SupportedModels.LEAK,
     SwitchbotModel.REMOTE: SupportedModels.REMOTE,
-    SwitchbotModel.HUBMINI_MATTER: SupportedModels.HUBMINI_MATTER,
 }
 
 SUPPORTED_MODEL_TYPES = (

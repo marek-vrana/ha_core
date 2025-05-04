@@ -6,10 +6,14 @@ from collections.abc import Callable, Coroutine
 from dataclasses import dataclass
 from typing import Any, cast
 
-from aioswitcher.api import SwitcherApi
-from aioswitcher.api.messages import SwitcherBaseResponse
+from aioswitcher.api import (
+    DeviceState,
+    SwitcherApi,
+    SwitcherBaseResponse,
+    ThermostatSwing,
+)
 from aioswitcher.api.remotes import SwitcherBreezeRemote
-from aioswitcher.device import DeviceCategory, DeviceState, ThermostatSwing
+from aioswitcher.device import DeviceCategory
 
 from homeassistant.components.button import ButtonEntity, ButtonEntityDescription
 from homeassistant.const import EntityCategory

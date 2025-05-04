@@ -1,11 +1,8 @@
 """Ecovacs image entities."""
 
-from typing import cast
-
 from deebot_client.capabilities import CapabilityMap
 from deebot_client.device import Device
 from deebot_client.events.map import CachedMapInfoEvent, MapChangedEvent
-from deebot_client.map import Map
 
 from homeassistant.components.image import ImageEntity
 from homeassistant.core import HomeAssistant
@@ -50,7 +47,6 @@ class EcovacsMap(
         """Initialize entity."""
         super().__init__(device, capability, hass=hass)
         self._attr_extra_state_attributes = {}
-        self._map = cast(Map, self._device.map)
 
     entity_description = EntityDescription(
         key="map",
@@ -59,7 +55,7 @@ class EcovacsMap(
 
     def image(self) -> bytes | None:
         """Return bytes of image or None."""
-        if svg := self._map.get_svg_map():
+        if svg := self._device.map.get_svg_map():
             return svg.encode()
 
         return None
@@ -84,4 +80,4 @@ class EcovacsMap(
         Only used by the generic entity update service.
         """
         await super().async_update()
-        self._map.refresh()
+        self._device.map.refresh()

@@ -68,7 +68,7 @@
     },
     "sensor": {
       "motionmount_error_status": {
-        "name": "Error status",
+        "name": "Error Status",
         "state": {
           "none": "None",
           "motor": "Motor",

@@ -8,11 +8,9 @@ from anthropic import RateLimitError
 from anthropic.types import (
     InputJSONDelta,
     Message,
-    MessageDeltaUsage,
     RawContentBlockDeltaEvent,
     RawContentBlockStartEvent,
     RawContentBlockStopEvent,
-    RawMessageDeltaEvent,
     RawMessageStartEvent,
     RawMessageStopEvent,
     RawMessageStreamEvent,
@@ -25,7 +23,6 @@ from anthropic.types import (
     ToolUseBlock,
     Usage,
 )
-from anthropic.types.raw_message_delta_event import Delta
 from freezegun import freeze_time
 from httpx import URL, Request, Response
 import pytest
@@ -68,11 +65,6 @@ def create_messages(
             type="message_start",
         ),
         *content_blocks,
-        RawMessageDeltaEvent(
-            type="message_delta",
-            delta=Delta(stop_reason="end_turn", stop_sequence=""),
-            usage=MessageDeltaUsage(output_tokens=0),
-        ),
         RawMessageStopEvent(type="message_stop"),
     ]
 

@@ -53,7 +53,7 @@
         "state_attributes": {
           "preset_mode": {
             "state": {
-              "auto": "[%key:common::state::auto%]"
+              "auto": "Auto"
             }
           }
         }
@@ -139,7 +139,7 @@
       "description": "Adds a meter reading to Tado Energy IQ.",
       "fields": {
         "config_entry": {
-          "name": "Config entry",
+          "name": "Config Entry",
           "description": "Config entry to add meter reading to."
         },
         "reading": {

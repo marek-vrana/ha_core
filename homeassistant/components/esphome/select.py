@@ -25,8 +25,6 @@ from .entity import (
 )
 from .entry_data import ESPHomeConfigEntry, RuntimeEntryData
 
-PARALLEL_UPDATES = 0
-
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -52,7 +50,7 @@ async def async_setup_entry(
             [
                 EsphomeAssistPipelineSelect(hass, entry_data),
                 EsphomeVadSensitivitySelect(hass, entry_data),
-                EsphomeAssistSatelliteWakeWordSelect(entry_data),
+                EsphomeAssistSatelliteWakeWordSelect(hass, entry_data),
             ]
         )
 
@@ -107,10 +105,11 @@ class EsphomeAssistSatelliteWakeWordSelect(
         translation_key="wake_word",
         entity_category=EntityCategory.CONFIG,
     )
+    _attr_should_poll = False
     _attr_current_option: str | None = None
     _attr_options: list[str] = []
 
-    def __init__(self, entry_data: RuntimeEntryData) -> None:
+    def __init__(self, hass: HomeAssistant, entry_data: RuntimeEntryData) -> None:
         """Initialize a wake word selector."""
         EsphomeAssistEntity.__init__(self, entry_data)
 

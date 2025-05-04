@@ -353,7 +353,6 @@ async def test_diagnostics_macos(
                             "1": {"__type": "<class 'bytes'>", "repr": "b'\\x01'"}
                         },
                         "name": "wohand",
-                        "raw": None,
                         "rssi": -127,
                         "service_data": {},
                         "service_uuids": [],
@@ -383,7 +382,6 @@ async def test_diagnostics_macos(
                             "1": {"__type": "<class 'bytes'>", "repr": "b'\\x01'"}
                         },
                         "name": "wohand",
-                        "raw": None,
                         "rssi": -127,
                         "service_data": {},
                         "service_uuids": [],
@@ -558,7 +556,6 @@ async def test_diagnostics_remote_adapter(
                             "1": {"__type": "<class 'bytes'>", "repr": "b'\\x01'"}
                         },
                         "name": "wohand",
-                        "raw": None,
                         "rssi": -127,
                         "service_data": {},
                         "service_uuids": [],
@@ -588,7 +585,6 @@ async def test_diagnostics_remote_adapter(
                             "1": {"__type": "<class 'bytes'>", "repr": "b'\\x01'"}
                         },
                         "name": "wohand",
-                        "raw": None,
                         "rssi": -127,
                         "service_data": {},
                         "service_uuids": [],

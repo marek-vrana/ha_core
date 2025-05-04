@@ -3,12 +3,10 @@
   dict({
     'can_expand': True,
     'can_play': False,
-    'can_search': False,
     'children': list([
       dict({
         'can_expand': False,
         'can_play': True,
-        'can_search': False,
         'children_media_class': None,
         'media_class': 'track',
         'media_content_id': 'heos://media/1/station?name=Today%27s+Hits+Radio&image_url=&playable=True&browsable=False&media_id=123456789',
@@ -30,7 +28,6 @@
   dict({
     'can_expand': True,
     'can_play': False,
-    'can_search': False,
     'children': list([
     ]),
     'children_media_class': None,
@@ -46,12 +43,10 @@
   dict({
     'can_expand': True,
     'can_play': False,
-    'can_search': False,
     'children': list([
       dict({
         'can_expand': False,
         'can_play': True,
-        'can_search': False,
         'children_media_class': None,
         'media_class': 'music',
         'media_content_id': 'media-source://media_source/local/test.mp3',
@@ -73,12 +68,10 @@
   dict({
     'can_expand': True,
     'can_play': False,
-    'can_search': False,
     'children': list([
       dict({
         'can_expand': True,
         'can_play': False,
-        'can_search': False,
         'children_media_class': None,
         'media_class': 'directory',
         'media_content_id': 'heos://media/1/music_service?name=Pandora&image_url=&available=True&service_username=user',
@@ -89,7 +82,6 @@
       dict({
         'can_expand': True,
         'can_play': False,
-        'can_search': False,
         'children_media_class': None,
         'media_class': 'directory',
         'media_content_id': 'heos://media/3/music_service?name=TuneIn&image_url=&available=False',
@@ -100,7 +92,6 @@
       dict({
         'can_expand': True,
         'can_play': False,
-        'can_search': False,
         'children_media_class': 'music',
         'media_class': 'directory',
         'media_content_id': 'media-source://media_source/local/.',
@@ -122,12 +113,10 @@
   dict({
     'can_expand': True,
     'can_play': False,
-    'can_search': False,
     'children': list([
       dict({
         'can_expand': True,
         'can_play': False,
-        'can_search': False,
         'children_media_class': None,
         'media_class': 'directory',
         'media_content_id': 'heos://media/1/music_service?name=Pandora&image_url=&available=True&service_username=user',
@@ -138,7 +127,6 @@
       dict({
         'can_expand': True,
         'can_play': False,
-        'can_search': False,
         'children_media_class': None,
         'media_class': 'directory',
         'media_content_id': 'heos://media/3/music_service?name=TuneIn&image_url=&available=False',
@@ -160,7 +148,6 @@
   dict({
     'can_expand': True,
     'can_play': False,
-    'can_search': False,
     'children': list([
     ]),
     'children_media_class': 'directory',

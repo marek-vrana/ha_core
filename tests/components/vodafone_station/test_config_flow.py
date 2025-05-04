@@ -246,14 +246,12 @@ async def test_reconfigure_successful(
     # original entry
     assert mock_config_entry.data["host"] == "fake_host"
 
-    new_host = "192.168.100.60"
-
     reconfigure_result = await hass.config_entries.flow.async_configure(
         result["flow_id"],
-        user_input={
-            CONF_HOST: new_host,
-            CONF_PASSWORD: "fake_password",
-            CONF_USERNAME: "fake_username",
+        {
+            "host": "192.168.100.60",
+            "password": "fake_password",
+            "username": "fake_username",
         },
     )
 
@@ -261,7 +259,7 @@ async def test_reconfigure_successful(
     assert reconfigure_result["reason"] == "reconfigure_successful"
 
     # changed entry
-    assert mock_config_entry.data["host"] == new_host
+    assert mock_config_entry.data["host"] == "192.168.100.60"
 
 
 @pytest.mark.parametrize(
@@ -292,10 +290,10 @@ async def test_reconfigure_fails(
 
     reconfigure_result = await hass.config_entries.flow.async_configure(
         result["flow_id"],
-        user_input={
-            CONF_HOST: "192.168.100.60",
-            CONF_PASSWORD: "fake_password",
-            CONF_USERNAME: "fake_username",
+        {
+            "host": "192.168.100.60",
+            "password": "fake_password",
+            "username": "fake_username",
         },
     )
 

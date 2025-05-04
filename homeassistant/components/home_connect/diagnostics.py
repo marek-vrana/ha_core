@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from aiohomeconnect.client import Client as HomeConnectClient
+
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceEntry
 
@@ -12,7 +14,7 @@ from .coordinator import HomeConnectApplianceData, HomeConnectConfigEntry
 
 
 async def _generate_appliance_diagnostics(
-    appliance: HomeConnectApplianceData,
+    client: HomeConnectClient, appliance: HomeConnectApplianceData
 ) -> dict[str, Any]:
     return {
         **appliance.info.to_dict(),
@@ -29,7 +31,9 @@ async def async_get_config_entry_diagnostics(
 ) -> dict[str, Any]:
     """Return diagnostics for a config entry."""
     return {
-        appliance.info.ha_id: await _generate_appliance_diagnostics(appliance)
+        appliance.info.ha_id: await _generate_appliance_diagnostics(
+            entry.runtime_data.client, appliance
+        )
         for appliance in entry.runtime_data.data.values()
     }
 
@@ -41,4 +45,6 @@ async def async_get_device_diagnostics(
     ha_id = next(
         (identifier[1] for identifier in device.identifiers if identifier[0] == DOMAIN),
     )
-    return await _generate_appliance_diagnostics(entry.runtime_data.data[ha_id])
+    return await _generate_appliance_diagnostics(
+        entry.runtime_data.client, entry.runtime_data.data[ha_id]
+    )

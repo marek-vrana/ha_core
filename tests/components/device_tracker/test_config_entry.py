@@ -146,14 +146,12 @@ class MockTrackerEntity(TrackerEntity):
         location_name: str | None = None,
         latitude: float | None = None,
         longitude: float | None = None,
-        location_accuracy: float = 0,
     ) -> None:
         """Initialize entity."""
         self._battery_level = battery_level
         self._location_name = location_name
         self._latitude = latitude
         self._longitude = longitude
-        self._location_accuracy = location_accuracy
 
     @property
     def battery_level(self) -> int | None:
@@ -183,11 +181,6 @@ class MockTrackerEntity(TrackerEntity):
         """Return longitude value of the device."""
         return self._longitude
 
-    @property
-    def location_accuracy(self) -> float:
-        """Return the accuracy of the location in meters."""
-        return self._location_accuracy
-
 
 @pytest.fixture(name="battery_level")
 def battery_level_fixture() -> int | None:
@@ -213,12 +206,6 @@ def longitude_fixture() -> float | None:
     return None
 
 
-@pytest.fixture(name="location_accuracy")
-def accuracy_fixture() -> float:
-    """Return the location accuracy of the entity for the test."""
-    return 0
-
-
 @pytest.fixture(name="tracker_entity")
 def tracker_entity_fixture(
     entity_id: str,
@@ -226,7 +213,6 @@ def tracker_entity_fixture(
     location_name: str | None,
     latitude: float | None,
     longitude: float | None,
-    location_accuracy: float = 0,
 ) -> MockTrackerEntity:
     """Create a test tracker entity."""
     entity = MockTrackerEntity(
@@ -234,7 +220,6 @@ def tracker_entity_fixture(
         location_name=location_name,
         latitude=latitude,
         longitude=longitude,
-        location_accuracy=location_accuracy,
     )
     entity.entity_id = entity_id
     return entity
@@ -528,7 +513,6 @@ def test_tracker_entity() -> None:
     assert entity.battery_level is None
     assert entity.should_poll is False
     assert entity.force_update is True
-    assert entity.location_accuracy == 0
 
     class MockEntity(TrackerEntity):
         """Mock tracker class."""

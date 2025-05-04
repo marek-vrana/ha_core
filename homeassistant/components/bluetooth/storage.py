@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from habluetooth import (
+from bluetooth_adapters import (
     DiscoveredDeviceAdvertisementData,
     DiscoveredDeviceAdvertisementDataDict,
     DiscoveryStorageType,

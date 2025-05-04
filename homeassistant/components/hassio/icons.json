@@ -22,6 +22,9 @@
     "addon_stop": {
       "service": "mdi:stop"
     },
+    "addon_update": {
+      "service": "mdi:update"
+    },
     "host_reboot": {
       "service": "mdi:restart"
     },

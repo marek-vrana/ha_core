@@ -183,10 +183,10 @@ class GoogleGenerativeAIOptionsFlow(OptionsFlow):
 
         if user_input is not None:
             if user_input[CONF_RECOMMENDED] == self.last_rendered_recommended:
-                if not user_input.get(CONF_LLM_HASS_API):
-                    user_input.pop(CONF_LLM_HASS_API, None)
+                if user_input[CONF_LLM_HASS_API] == "none":
+                    user_input.pop(CONF_LLM_HASS_API)
                 if not (
-                    user_input.get(CONF_LLM_HASS_API)
+                    user_input.get(CONF_LLM_HASS_API, "none") != "none"
                     and user_input.get(CONF_USE_GOOGLE_SEARCH_TOOL, False) is True
                 ):
                     # Don't allow to save options that enable the Google Seearch tool with an Assist API
@@ -208,21 +208,23 @@ class GoogleGenerativeAIOptionsFlow(OptionsFlow):
 
 async def google_generative_ai_config_option_schema(
     hass: HomeAssistant,
-    options: Mapping[str, Any],
+    options: dict[str, Any] | MappingProxyType[str, Any],
     genai_client: genai.Client,
 ) -> dict:
     """Return a schema for Google Generative AI completion options."""
     hass_apis: list[SelectOptionDict] = [
         SelectOptionDict(
+            label="No control",
+            value="none",
+        )
+    ]
+    hass_apis.extend(
+        SelectOptionDict(
             label=api.name,
             value=api.id,
         )
         for api in llm.async_get_apis(hass)
-    ]
-    if (suggested_llm_apis := options.get(CONF_LLM_HASS_API)) and isinstance(
-        suggested_llm_apis, str
-    ):
-        suggested_llm_apis = [suggested_llm_apis]
+    )
 
     schema = {
         vol.Optional(
@@ -235,8 +237,9 @@ async def google_generative_ai_config_option_schema(
         ): TemplateSelector(),
         vol.Optional(
             CONF_LLM_HASS_API,
-            description={"suggested_value": suggested_llm_apis},
-        ): SelectSelector(SelectSelectorConfig(options=hass_apis, multiple=True)),
+            description={"suggested_value": options.get(CONF_LLM_HASS_API)},
+            default="none",
+        ): SelectSelector(SelectSelectorConfig(options=hass_apis)),
         vol.Required(
             CONF_RECOMMENDED, default=options.get(CONF_RECOMMENDED, False)
         ): bool,

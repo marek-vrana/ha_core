@@ -22,9 +22,6 @@
     "binary_sensor": {
       "tracker_battery_charging": {
         "name": "Tracker battery charging"
-      },
-      "tracker_power_saving": {
-        "name": "Tracker power saving"
       }
     },
     "device_tracker": {

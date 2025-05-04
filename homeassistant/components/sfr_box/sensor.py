@@ -174,7 +174,6 @@ SYSTEM_SENSOR_TYPES: tuple[SFRBoxSensorEntityDescription[SystemInfo], ...] = (
         entity_category=EntityCategory.DIAGNOSTIC,
         entity_registry_enabled_default=False,
         native_unit_of_measurement=UnitOfElectricPotential.MILLIVOLT,
-        state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda x: x.alimvoltage,
     ),
     SFRBoxSensorEntityDescription[SystemInfo](
@@ -183,7 +182,6 @@ SYSTEM_SENSOR_TYPES: tuple[SFRBoxSensorEntityDescription[SystemInfo], ...] = (
         entity_category=EntityCategory.DIAGNOSTIC,
         entity_registry_enabled_default=False,
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
-        state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda x: _get_temperature(x.temperature),
     ),
 )

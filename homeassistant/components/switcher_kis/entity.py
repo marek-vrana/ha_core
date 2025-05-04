@@ -6,7 +6,6 @@ from typing import Any
 from aioswitcher.api import SwitcherApi
 from aioswitcher.api.messages import SwitcherBaseResponse
 
-from homeassistant.core import callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.device_registry import DeviceInfo
@@ -28,15 +27,6 @@ class SwitcherEntity(CoordinatorEntity[SwitcherDataUpdateCoordinator]):
         self._attr_device_info = DeviceInfo(
             connections={(dr.CONNECTION_NETWORK_MAC, coordinator.mac_address)}
         )
-
-    @callback
-    def _handle_coordinator_update(self) -> None:
-        """Handle updated data from the coordinator."""
-        self._update_data()
-        super()._handle_coordinator_update()
-
-    def _update_data(self) -> None:
-        """Update data from device."""
 
     async def _async_call_api(self, api: str, *args: Any, **kwargs: Any) -> None:
         """Call Switcher API."""

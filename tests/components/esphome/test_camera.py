@@ -1,12 +1,21 @@
 """Test ESPHome cameras."""
 
-from aioesphomeapi import APIClient, CameraInfo, CameraState as ESPHomeCameraState
+from collections.abc import Awaitable, Callable
+
+from aioesphomeapi import (
+    APIClient,
+    CameraInfo,
+    CameraState as ESPHomeCameraState,
+    EntityInfo,
+    EntityState,
+    UserService,
+)
 
 from homeassistant.components.camera import CameraState
 from homeassistant.const import STATE_UNAVAILABLE
 from homeassistant.core import HomeAssistant
 
-from .conftest import MockESPHomeDeviceType
+from .conftest import MockESPHomeDevice
 
 from tests.typing import ClientSessionGenerator
 
@@ -21,7 +30,10 @@ SMALLEST_VALID_JPEG_BYTES = bytes.fromhex(SMALLEST_VALID_JPEG)
 async def test_camera_single_image(
     hass: HomeAssistant,
     mock_client: APIClient,
-    mock_esphome_device: MockESPHomeDeviceType,
+    mock_esphome_device: Callable[
+        [APIClient, list[EntityInfo], list[UserService], list[EntityState]],
+        Awaitable[MockESPHomeDevice],
+    ],
     hass_client: ClientSessionGenerator,
 ) -> None:
     """Test a generic camera single image request."""
@@ -66,7 +78,10 @@ async def test_camera_single_image(
 async def test_camera_single_image_unavailable_before_requested(
     hass: HomeAssistant,
     mock_client: APIClient,
-    mock_esphome_device: MockESPHomeDeviceType,
+    mock_esphome_device: Callable[
+        [APIClient, list[EntityInfo], list[UserService], list[EntityState]],
+        Awaitable[MockESPHomeDevice],
+    ],
     hass_client: ClientSessionGenerator,
 ) -> None:
     """Test a generic camera that goes unavailable before the request."""
@@ -104,7 +119,10 @@ async def test_camera_single_image_unavailable_before_requested(
 async def test_camera_single_image_unavailable_during_request(
     hass: HomeAssistant,
     mock_client: APIClient,
-    mock_esphome_device: MockESPHomeDeviceType,
+    mock_esphome_device: Callable[
+        [APIClient, list[EntityInfo], list[UserService], list[EntityState]],
+        Awaitable[MockESPHomeDevice],
+    ],
     hass_client: ClientSessionGenerator,
 ) -> None:
     """Test a generic camera that goes unavailable before the request."""
@@ -146,7 +164,10 @@ async def test_camera_single_image_unavailable_during_request(
 async def test_camera_stream(
     hass: HomeAssistant,
     mock_client: APIClient,
-    mock_esphome_device: MockESPHomeDeviceType,
+    mock_esphome_device: Callable[
+        [APIClient, list[EntityInfo], list[UserService], list[EntityState]],
+        Awaitable[MockESPHomeDevice],
+    ],
     hass_client: ClientSessionGenerator,
 ) -> None:
     """Test a generic camera stream."""
@@ -203,7 +224,10 @@ async def test_camera_stream(
 async def test_camera_stream_unavailable(
     hass: HomeAssistant,
     mock_client: APIClient,
-    mock_esphome_device: MockESPHomeDeviceType,
+    mock_esphome_device: Callable[
+        [APIClient, list[EntityInfo], list[UserService], list[EntityState]],
+        Awaitable[MockESPHomeDevice],
+    ],
     hass_client: ClientSessionGenerator,
 ) -> None:
     """Test a generic camera stream when the device is disconnected."""
@@ -240,7 +264,10 @@ async def test_camera_stream_unavailable(
 async def test_camera_stream_with_disconnection(
     hass: HomeAssistant,
     mock_client: APIClient,
-    mock_esphome_device: MockESPHomeDeviceType,
+    mock_esphome_device: Callable[
+        [APIClient, list[EntityInfo], list[UserService], list[EntityState]],
+        Awaitable[MockESPHomeDevice],
+    ],
     hass_client: ClientSessionGenerator,
 ) -> None:
     """Test a generic camera stream that goes unavailable during the request."""

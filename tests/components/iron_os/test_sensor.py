@@ -4,7 +4,7 @@ from collections.abc import AsyncGenerator
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from freezegun.api import FrozenDateTimeFactory
-from pynecil import LiveDataResponse
+from pynecil import CommunicationError, LiveDataResponse
 import pytest
 from syrupy.assertion import SnapshotAssertion
 
@@ -62,7 +62,7 @@ async def test_sensors_unavailable(
 
     assert config_entry.state is ConfigEntryState.LOADED
 
-    mock_pynecil.is_connected = False
+    mock_pynecil.get_live_data.side_effect = CommunicationError
     freezer.tick(SCAN_INTERVAL)
     async_fire_time_changed(hass)
 

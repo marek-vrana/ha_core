@@ -2,17 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
-from dataclasses import dataclass
-from typing import cast
-
-from aioswitcher.device import (
-    DeviceCategory,
-    SwitcherBase,
-    SwitcherPowerBase,
-    SwitcherThermostatBase,
-    SwitcherTimedBase,
-)
+from aioswitcher.device import DeviceCategory
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -21,7 +11,7 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import UnitOfElectricCurrent, UnitOfPower, UnitOfTemperature
+from homeassistant.const import UnitOfElectricCurrent, UnitOfPower
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
@@ -31,50 +21,35 @@ from .const import SIGNAL_DEVICE_ADD
 from .coordinator import SwitcherDataUpdateCoordinator
 from .entity import SwitcherEntity
 
-
-@dataclass(frozen=True, kw_only=True)
-class SwitcherSensorEntityDescription(SensorEntityDescription):
-    """Class to describe a Switcher sensor entity."""
-
-    value_fn: Callable[[SwitcherBase], StateType]
-
-
-POWER_SENSORS: list[SwitcherSensorEntityDescription] = [
-    SwitcherSensorEntityDescription(
+POWER_SENSORS: list[SensorEntityDescription] = [
+    SensorEntityDescription(
         key="power_consumption",
         native_unit_of_measurement=UnitOfPower.WATT,
         device_class=SensorDeviceClass.POWER,
         state_class=SensorStateClass.MEASUREMENT,
-        value_fn=lambda data: cast(SwitcherPowerBase, data).power_consumption,
     ),
-    SwitcherSensorEntityDescription(
+    SensorEntityDescription(
         key="electric_current",
         native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
         device_class=SensorDeviceClass.CURRENT,
         state_class=SensorStateClass.MEASUREMENT,
-        value_fn=lambda data: cast(SwitcherPowerBase, data).electric_current,
     ),
 ]
-TIME_SENSORS: list[SwitcherSensorEntityDescription] = [
-    SwitcherSensorEntityDescription(
+TIME_SENSORS: list[SensorEntityDescription] = [
+    SensorEntityDescription(
         key="remaining_time",
         translation_key="remaining_time",
-        value_fn=lambda data: cast(SwitcherTimedBase, data).remaining_time,
     ),
-    SwitcherSensorEntityDescription(
+    SensorEntityDescription(
         key="auto_off_set",
         translation_key="auto_shutdown",
         entity_registry_enabled_default=False,
-        value_fn=lambda data: cast(SwitcherTimedBase, data).auto_shutdown,
     ),
 ]
-TEMPERATURE_SENSORS: list[SwitcherSensorEntityDescription] = [
-    SwitcherSensorEntityDescription(
+TEMPERATURE_SENSORS: list[SensorEntityDescription] = [
+    SensorEntityDescription(
         key="temperature",
-        device_class=SensorDeviceClass.TEMPERATURE,
-        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
-        state_class=SensorStateClass.MEASUREMENT,
-        value_fn=lambda data: cast(SwitcherThermostatBase, data).temperature,
+        translation_key="temperature",
     ),
 ]
 
@@ -120,11 +95,11 @@ class SwitcherSensorEntity(SwitcherEntity, SensorEntity):
     def __init__(
         self,
         coordinator: SwitcherDataUpdateCoordinator,
-        description: SwitcherSensorEntityDescription,
+        description: SensorEntityDescription,
     ) -> None:
         """Initialize the entity."""
         super().__init__(coordinator)
-        self.entity_description: SwitcherSensorEntityDescription = description
+        self.entity_description = description
 
         self._attr_unique_id = (
             f"{coordinator.device_id}-{coordinator.mac_address}-{description.key}"
@@ -133,4 +108,4 @@ class SwitcherSensorEntity(SwitcherEntity, SensorEntity):
     @property
     def native_value(self) -> StateType:
         """Return value of sensor."""
-        return self.entity_description.value_fn(self.coordinator.data)
+        return getattr(self.coordinator.data, self.entity_description.key)  # type: ignore[no-any-return]

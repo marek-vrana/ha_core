@@ -56,7 +56,6 @@ from .coordinator import (
     ShellyRpcCoordinator,
     ShellyRpcPollingCoordinator,
 )
-from .repairs import async_manage_ble_scanner_firmware_unsupported_issue
 from .utils import (
     async_create_issue_unsupported_firmware,
     get_coap_context,
@@ -294,7 +293,6 @@ async def _async_setup_rpc_entry(hass: HomeAssistant, entry: ShellyConfigEntry) 
                     translation_key="firmware_unsupported",
                     translation_placeholders={"device": entry.title},
                 )
-            runtime_data.rpc_zigbee_enabled = device.zigbee_enabled
             runtime_data.rpc_supports_scripts = await device.supports_scripts()
             if runtime_data.rpc_supports_scripts:
                 runtime_data.rpc_script_events = await get_rpc_scripts_event_types(
@@ -320,10 +318,6 @@ async def _async_setup_rpc_entry(hass: HomeAssistant, entry: ShellyConfigEntry) 
         runtime_data.rpc_poll = ShellyRpcPollingCoordinator(hass, entry, device)
         await hass.config_entries.async_forward_entry_setups(
             entry, runtime_data.platforms
-        )
-        async_manage_ble_scanner_firmware_unsupported_issue(
-            hass,
-            entry,
         )
     elif (
         sleep_period is None

@@ -1,5 +1,6 @@
 """Test ESPHome covers."""
 
+from collections.abc import Awaitable, Callable
 from unittest.mock import call
 
 from aioesphomeapi import (
@@ -7,6 +8,9 @@ from aioesphomeapi import (
     CoverInfo,
     CoverOperation,
     CoverState as ESPHomeCoverState,
+    EntityInfo,
+    EntityState,
+    UserService,
 )
 
 from homeassistant.components.cover import (
@@ -27,13 +31,16 @@ from homeassistant.components.cover import (
 from homeassistant.const import ATTR_ENTITY_ID
 from homeassistant.core import HomeAssistant
 
-from .conftest import MockESPHomeDeviceType
+from .conftest import MockESPHomeDevice
 
 
 async def test_cover_entity(
     hass: HomeAssistant,
     mock_client: APIClient,
-    mock_esphome_device: MockESPHomeDeviceType,
+    mock_esphome_device: Callable[
+        [APIClient, list[EntityInfo], list[UserService], list[EntityState]],
+        Awaitable[MockESPHomeDevice],
+    ],
 ) -> None:
     """Test a generic cover entity."""
     entity_info = [
@@ -161,7 +168,10 @@ async def test_cover_entity(
 async def test_cover_entity_without_position(
     hass: HomeAssistant,
     mock_client: APIClient,
-    mock_esphome_device: MockESPHomeDeviceType,
+    mock_esphome_device: Callable[
+        [APIClient, list[EntityInfo], list[UserService], list[EntityState]],
+        Awaitable[MockESPHomeDevice],
+    ],
 ) -> None:
     """Test a generic cover entity without position, tilt, or stop."""
     entity_info = [

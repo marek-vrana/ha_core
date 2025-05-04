@@ -19,6 +19,7 @@ from homeassistant.const import (
     CONF_ENTITIES,
     CONF_LIGHTS,
     CONF_NAME,
+    CONF_RESOURCE,
     CONF_SENSORS,
     CONF_SWITCHES,
 )
@@ -28,7 +29,6 @@ from homeassistant.helpers.typing import ConfigType
 
 from .const import (
     CONF_CLIMATES,
-    CONF_DOMAIN_DATA,
     CONF_HARDWARE_SERIAL,
     CONF_HARDWARE_TYPE,
     CONF_SCENES,
@@ -79,9 +79,9 @@ def get_resource(domain_name: str, domain_data: ConfigType) -> str:
     if domain_name == "cover":
         return cast(str, domain_data["motor"])
     if domain_name == "climate":
-        return cast(str, domain_data["setpoint"])
+        return f"{domain_data['source']}.{domain_data['setpoint']}"
     if domain_name == "scene":
-        return f"{domain_data['register']}{domain_data['scene']}"
+        return f"{domain_data['register']}.{domain_data['scene']}"
     raise ValueError("Unknown domain")
 
 
@@ -115,9 +115,7 @@ def purge_entity_registry(
     references_entry_data = set()
     for entity_data in imported_entry_data[CONF_ENTITIES]:
         entity_unique_id = generate_unique_id(
-            entry_id,
-            entity_data[CONF_ADDRESS],
-            get_resource(entity_data[CONF_DOMAIN], entity_data[CONF_DOMAIN_DATA]),
+            entry_id, entity_data[CONF_ADDRESS], entity_data[CONF_RESOURCE]
         )
         entity_id = entity_registry.async_get_entity_id(
             entity_data[CONF_DOMAIN], DOMAIN, entity_unique_id

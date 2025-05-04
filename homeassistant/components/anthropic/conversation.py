@@ -9,13 +9,11 @@ from anthropic import AsyncStream
 from anthropic._types import NOT_GIVEN
 from anthropic.types import (
     InputJSONDelta,
-    MessageDeltaUsage,
     MessageParam,
     MessageStreamEvent,
     RawContentBlockDeltaEvent,
     RawContentBlockStartEvent,
     RawContentBlockStopEvent,
-    RawMessageDeltaEvent,
     RawMessageStartEvent,
     RawMessageStopEvent,
     RedactedThinkingBlock,
@@ -33,7 +31,6 @@ from anthropic.types import (
     ToolResultBlockParam,
     ToolUseBlock,
     ToolUseBlockParam,
-    Usage,
 )
 from voluptuous_openapi import convert
 
@@ -165,8 +162,7 @@ def _convert_content(
     return messages
 
 
-async def _transform_stream(  # noqa: C901 - This is complex, but better to have it in one place
-    chat_log: conversation.ChatLog,
+async def _transform_stream(
     result: AsyncStream[MessageStreamEvent],
     messages: list[MessageParam],
 ) -> AsyncGenerator[conversation.AssistantContentDeltaDict]:
@@ -211,7 +207,6 @@ async def _transform_stream(  # noqa: C901 - This is complex, but better to have
         | None
     ) = None
     current_tool_args: str
-    input_usage: Usage | None = None
 
     async for response in result:
         LOGGER.debug("Received response: %s", response)
@@ -220,7 +215,6 @@ async def _transform_stream(  # noqa: C901 - This is complex, but better to have
             if response.message.role != "assistant":
                 raise ValueError("Unexpected message role")
             current_message = MessageParam(role=response.message.role, content=[])
-            input_usage = response.message.usage
         elif isinstance(response, RawContentBlockStartEvent):
             if isinstance(response.content_block, ToolUseBlock):
                 current_block = ToolUseBlockParam(
@@ -271,52 +265,30 @@ async def _transform_stream(  # noqa: C901 - This is complex, but better to have
             if current_block is None:
                 raise ValueError("Unexpected stop event without a current block")
             if current_block["type"] == "tool_use":
-                # tool block
+                tool_block = cast(ToolUseBlockParam, current_block)
                 tool_args = json.loads(current_tool_args) if current_tool_args else {}
-                current_block["input"] = tool_args
+                tool_block["input"] = tool_args
                 yield {
                     "tool_calls": [
                         llm.ToolInput(
-                            id=current_block["id"],
-                            tool_name=current_block["name"],
+                            id=tool_block["id"],
+                            tool_name=tool_block["name"],
                             tool_args=tool_args,
                         )
                     ]
                 }
             elif current_block["type"] == "thinking":
-                # thinking block
-                LOGGER.debug("Thinking: %s", current_block["thinking"])
+                thinking_block = cast(ThinkingBlockParam, current_block)
+                LOGGER.debug("Thinking: %s", thinking_block["thinking"])
 
             if current_message is None:
                 raise ValueError("Unexpected stop event without a current message")
             current_message["content"].append(current_block)  # type: ignore[union-attr]
             current_block = None
-        elif isinstance(response, RawMessageDeltaEvent):
-            if (usage := response.usage) is not None:
-                chat_log.async_trace(_create_token_stats(input_usage, usage))
         elif isinstance(response, RawMessageStopEvent):
             if current_message is not None:
                 messages.append(current_message)
                 current_message = None
-
-
-def _create_token_stats(
-    input_usage: Usage | None, response_usage: MessageDeltaUsage
-) -> dict[str, Any]:
-    """Create token stats for conversation agent tracing."""
-    input_tokens = 0
-    cached_input_tokens = 0
-    if input_usage:
-        input_tokens = input_usage.input_tokens
-        cached_input_tokens = input_usage.cache_creation_input_tokens or 0
-    output_tokens = response_usage.output_tokens
-    return {
-        "stats": {
-            "input_tokens": input_tokens,
-            "cached_input_tokens": cached_input_tokens,
-            "output_tokens": output_tokens,
-        }
-    }
 
 
 class AnthropicConversationEntity(
@@ -421,8 +393,7 @@ class AnthropicConversationEntity(
                     [
                         content
                         async for content in chat_log.async_add_delta_content_stream(
-                            user_input.agent_id,
-                            _transform_stream(chat_log, stream, messages),
+                            user_input.agent_id, _transform_stream(stream, messages)
                         )
                         if not isinstance(content, conversation.AssistantContent)
                     ]

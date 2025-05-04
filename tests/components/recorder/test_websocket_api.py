@@ -698,33 +698,17 @@ def _circular_mean(values: Iterable[StatisticData]) -> dict[str, float]:
     }
 
 
-def _circular_mean_approx(
-    values: Iterable[StatisticData], tolerance: float | None = None
-) -> ApproxBase:
-    return pytest.approx(_circular_mean(values)["mean"], abs=tolerance)
+def _circular_mean_approx(values: Iterable[StatisticData]) -> ApproxBase:
+    return pytest.approx(_circular_mean(values)["mean"])
 
 
 @pytest.mark.freeze_time(datetime.datetime(2022, 10, 21, 7, 25, tzinfo=datetime.UTC))
 @pytest.mark.usefixtures("recorder_mock")
 @pytest.mark.parametrize("offset", [0, 1, 2])
-@pytest.mark.parametrize(
-    ("step_size", "tolerance"),
-    [
-        (123.456, 1e-4),
-        # In this case the angles are uniformly distributed and the mean is undefined.
-        # This edge case is not handled by the current implementation, but the test
-        # checks the behavior is consistent.
-        # We could consider returning None in this case, or returning also an estimate
-        # of the variance.
-        (120, 10),
-    ],
-)
 async def test_statistic_during_period_circular_mean(
     hass: HomeAssistant,
     hass_ws_client: WebSocketGenerator,
     offset: int,
-    step_size: float,
-    tolerance: float,
 ) -> None:
     """Test statistic_during_period."""
     now = dt_util.utcnow()
@@ -740,7 +724,7 @@ async def test_statistic_during_period_circular_mean(
     imported_stats_5min: list[StatisticData] = [
         {
             "start": (start + timedelta(minutes=5 * i)),
-            "mean": (step_size * i) % 360,
+            "mean": (123.456 * i) % 360,
             "mean_weight": 1,
         }
         for i in range(39)
@@ -823,7 +807,7 @@ async def test_statistic_during_period_circular_mean(
     response = await client.receive_json()
     assert response["success"]
     assert response["result"] == {
-        "mean": _circular_mean_approx(imported_stats_5min, tolerance),
+        "mean": _circular_mean_approx(imported_stats_5min),
         "max": None,
         "min": None,
         "change": None,
@@ -851,7 +835,7 @@ async def test_statistic_during_period_circular_mean(
     response = await client.receive_json()
     assert response["success"]
     assert response["result"] == {
-        "mean": _circular_mean_approx(imported_stats_5min, tolerance),
+        "mean": _circular_mean_approx(imported_stats_5min),
         "max": None,
         "min": None,
         "change": None,
@@ -879,7 +863,7 @@ async def test_statistic_during_period_circular_mean(
     response = await client.receive_json()
     assert response["success"]
     assert response["result"] == {
-        "mean": _circular_mean_approx(imported_stats_5min, tolerance),
+        "mean": _circular_mean_approx(imported_stats_5min),
         "max": None,
         "min": None,
         "change": None,
@@ -903,7 +887,7 @@ async def test_statistic_during_period_circular_mean(
     response = await client.receive_json()
     assert response["success"]
     assert response["result"] == {
-        "mean": _circular_mean_approx(imported_stats_5min[26:], tolerance),
+        "mean": _circular_mean_approx(imported_stats_5min[26:]),
         "max": None,
         "min": None,
         "change": None,
@@ -926,7 +910,7 @@ async def test_statistic_during_period_circular_mean(
     response = await client.receive_json()
     assert response["success"]
     assert response["result"] == {
-        "mean": _circular_mean_approx(imported_stats_5min[26:], tolerance),
+        "mean": _circular_mean_approx(imported_stats_5min[26:]),
         "max": None,
         "min": None,
         "change": None,
@@ -950,7 +934,7 @@ async def test_statistic_during_period_circular_mean(
     response = await client.receive_json()
     assert response["success"]
     assert response["result"] == {
-        "mean": _circular_mean_approx(imported_stats_5min[:26], tolerance),
+        "mean": _circular_mean_approx(imported_stats_5min[:26]),
         "max": None,
         "min": None,
         "change": None,
@@ -980,7 +964,7 @@ async def test_statistic_during_period_circular_mean(
     response = await client.receive_json()
     assert response["success"]
     assert response["result"] == {
-        "mean": _circular_mean_approx(imported_stats_5min[26:32], tolerance),
+        "mean": _circular_mean_approx(imported_stats_5min[26:32]),
         "max": None,
         "min": None,
         "change": None,
@@ -1002,7 +986,7 @@ async def test_statistic_during_period_circular_mean(
     response = await client.receive_json()
     assert response["success"]
     assert response["result"] == {
-        "mean": _circular_mean_approx(imported_stats_5min[24 - offset :], tolerance),
+        "mean": _circular_mean_approx(imported_stats_5min[24 - offset :]),
         "max": None,
         "min": None,
         "change": None,
@@ -1021,7 +1005,7 @@ async def test_statistic_during_period_circular_mean(
     response = await client.receive_json()
     assert response["success"]
     assert response["result"] == {
-        "mean": _circular_mean_approx(imported_stats_5min[24 - offset :], tolerance),
+        "mean": _circular_mean_approx(imported_stats_5min[24 - offset :]),
         "max": None,
         "min": None,
         "change": None,
@@ -1043,9 +1027,7 @@ async def test_statistic_during_period_circular_mean(
     slice_start = 24 - offset
     slice_end = 36 - offset
     assert response["result"] == {
-        "mean": _circular_mean_approx(
-            imported_stats_5min[slice_start:slice_end], tolerance
-        ),
+        "mean": _circular_mean_approx(imported_stats_5min[slice_start:slice_end]),
         "max": None,
         "min": None,
         "change": None,
@@ -1062,7 +1044,7 @@ async def test_statistic_during_period_circular_mean(
     response = await client.receive_json()
     assert response["success"]
     assert response["result"] == {
-        "mean": _circular_mean_approx(imported_stats_5min, tolerance),
+        "mean": _circular_mean_approx(imported_stats_5min),
     }
 
 

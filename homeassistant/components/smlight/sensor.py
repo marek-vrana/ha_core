@@ -25,8 +25,6 @@ from .const import UPTIME_DEVIATION
 from .coordinator import SmConfigEntry, SmDataUpdateCoordinator
 from .entity import SmEntity
 
-PARALLEL_UPDATES = 0
-
 
 @dataclass(frozen=True, kw_only=True)
 class SmSensorEntityDescription(SensorEntityDescription):

@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping
+from collections.abc import Callable
 from datetime import timedelta
 import logging
 from random import randrange
+from types import MappingProxyType
 from typing import Any, Self
 
 import metno
@@ -40,7 +41,7 @@ class CannotConnect(HomeAssistantError):
 class MetWeatherData:
     """Keep data for Met.no weather entities."""
 
-    def __init__(self, hass: HomeAssistant, config: Mapping[str, Any]) -> None:
+    def __init__(self, hass: HomeAssistant, config: MappingProxyType[str, Any]) -> None:
         """Initialise the weather entity data."""
         self.hass = hass
         self._config = config

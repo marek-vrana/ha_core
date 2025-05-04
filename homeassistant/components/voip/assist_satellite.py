@@ -101,7 +101,6 @@ class VoipAssistSatellite(VoIPEntity, AssistSatelliteEntity, RtpDatagramProtocol
     entity_description = AssistSatelliteEntityDescription(key="assist_satellite")
     _attr_translation_key = "assist_satellite"
     _attr_name = None
-    _attr_icon = "mdi:phone-classic"
     _attr_supported_features = (
         AssistSatelliteEntityFeature.ANNOUNCE
         | AssistSatelliteEntityFeature.START_CONVERSATION
@@ -409,18 +408,10 @@ class VoipAssistSatellite(VoIPEntity, AssistSatelliteEntity, RtpDatagramProtocol
         """Play an announcement once."""
         _LOGGER.debug("Playing announcement")
 
-        if announcement.tts_token is None:
-            _LOGGER.error("Only TTS announcements are supported")
-            return
-
-        await asyncio.sleep(_ANNOUNCEMENT_BEFORE_DELAY)
-        stream = tts.async_get_stream(self.hass, announcement.tts_token)
-        if stream is None:
-            _LOGGER.error("TTS stream no longer available")
-            return
-
         try:
-            await self._send_tts(stream, wait_for_tone=False)
+            await asyncio.sleep(_ANNOUNCEMENT_BEFORE_DELAY)
+            await self._send_tts(announcement.original_media_id, wait_for_tone=False)
+
             if not self._run_pipeline_after_announce:
                 # Delay before looping announcement
                 await asyncio.sleep(_ANNOUNCEMENT_AFTER_DELAY)
@@ -451,14 +442,11 @@ class VoipAssistSatellite(VoIPEntity, AssistSatelliteEntity, RtpDatagramProtocol
                 )
         elif event.type == PipelineEventType.TTS_END:
             # Send TTS audio to caller over RTP
-            if (
-                event.data
-                and (tts_output := event.data["tts_output"])
-                and (stream := tts.async_get_stream(self.hass, tts_output["token"]))
-            ):
+            if event.data and (tts_output := event.data["tts_output"]):
+                media_id = tts_output["media_id"]
                 self.config_entry.async_create_background_task(
                     self.hass,
-                    self._send_tts(tts_stream=stream),
+                    self._send_tts(media_id),
                     "voip_pipeline_tts",
                 )
             else:
@@ -469,22 +457,19 @@ class VoipAssistSatellite(VoIPEntity, AssistSatelliteEntity, RtpDatagramProtocol
             self._pipeline_had_error = True
             _LOGGER.warning(event)
 
-    async def _send_tts(
-        self,
-        tts_stream: tts.ResultStream,
-        wait_for_tone: bool = True,
-    ) -> None:
+    async def _send_tts(self, media_id: str, wait_for_tone: bool = True) -> None:
         """Send TTS audio to caller via RTP."""
         try:
             if self.transport is None:
                 return  # not connected
 
-            data = b"".join([chunk async for chunk in tts_stream.async_stream_result()])
+            extension, data = await tts.async_get_media_source_audio(
+                self.hass,
+                media_id,
+            )
 
-            if tts_stream.extension != "wav":
-                raise ValueError(
-                    f"Only TTS WAV audio can be streamed, got {tts_stream.extension}"
-                )
+            if extension != "wav":
+                raise ValueError(f"Only WAV audio can be streamed, got {extension}")
 
             if wait_for_tone and ((self._tones & Tones.PROCESSING) == Tones.PROCESSING):
                 # Don't overlap TTS and processing beep

@@ -160,26 +160,6 @@
           }
         }
       }
-    },
-    "fan": {
-      "fan": {
-        "state_attributes": {
-          "last_run_success": {
-            "state": {
-              "true": "[%key:component::binary_sensor::entity_component::problem::state::off%]",
-              "false": "[%key:component::binary_sensor::entity_component::problem::state::on%]"
-            }
-          },
-          "preset_mode": {
-            "state": {
-              "normal": "Normal",
-              "natural": "Natural",
-              "sleep": "Sleep",
-              "baby": "Baby"
-            }
-          }
-        }
-      }
     }
   }
 }
